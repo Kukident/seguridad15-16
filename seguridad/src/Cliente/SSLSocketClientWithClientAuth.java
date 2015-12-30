@@ -34,6 +34,7 @@ import javax.net.ssl.TrustManager;
  * the firewall by following SSLSocketClientWithTunneling.java.
  *
  ****************************************************************************/
+///////////////HOLAAAAAAAAAAAAAAAA
 public class SSLSocketClientWithClientAuth {
 
 	private static String 	raizMios ="C:/Users/danie/workspace/seguridad/src/Cliente/";

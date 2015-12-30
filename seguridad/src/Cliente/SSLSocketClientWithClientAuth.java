@@ -13,17 +13,21 @@ import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.security.KeyStore;
+import java.security.PrivateKey;
 import java.util.Scanner;
 
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLSocket;
 import javax.net.ssl.SSLSocketFactory;
-import javax.net.ssl.TrustManager;
+
+import java.security.cert.CertificateFactory;
+import java.security.cert.X509Certificate;
 
 /****************************************************************************
  * This example shows how to set up a key manager to do client
@@ -42,7 +46,7 @@ public class SSLSocketClientWithClientAuth {
 	public static void main(String[] args) throws Exception {
 
 		String 	host 		= null;
-		int 		port 		= -1;
+		int 	port 		= -1;
 		String 	path 		= null;
 		char[] 	contraseña 		  = "147258".toCharArray();
 
@@ -93,6 +97,28 @@ public class SSLSocketClientWithClientAuth {
 				ctx.init(kmf.getKeyManagers(), null, null);
 
 				factory = ctx.getSocketFactory();
+				
+				/////////////////////////Atencion al parkour
+				String		ks_file			= raizMios + "cliente.jce";
+				char[]      ks_password  	= "147258".toCharArray();
+				char[]      key_password 	= "147258".toCharArray();
+				ks = KeyStore.getInstance("JCEKS");
+
+				ks.load(new FileInputStream(ks_file),  ks_password);
+
+				KeyStore.PrivateKeyEntry pkEntry = (KeyStore.PrivateKeyEntry)
+			 	      		   						ks.getEntry("prueba",
+			                                        new KeyStore.PasswordProtection(key_password));
+			 
+			  
+				
+				
+				
+				     X509Certificate cert = (X509Certificate)pkEntry.getCertificate();
+				     System.out.println(cert.getIssuerDN());
+
+				
+				
 
 				/*********************************************************************
 				 * Suites SSL del contexto
@@ -169,6 +195,7 @@ public class SSLSocketClientWithClientAuth {
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
+	 
 	}
 
 	/******************************************************

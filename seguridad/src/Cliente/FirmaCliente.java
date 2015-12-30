@@ -37,7 +37,7 @@ import java.security.cert.X509Certificate;
 public class FirmaCliente {
 
     public static void main(String[] args) throws Exception {
-    String directorioRaiz="C:/Users/danie/workspace/seguridad/src/";
+    String directorioRaiz="D:/git/seguridad/src/";
     FileInputStream fmensaje   = new    FileInputStream(directorioRaiz + "nada.txt");      
 
     String 		provider         = "SunJCE";

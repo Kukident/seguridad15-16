@@ -22,7 +22,7 @@ public class ClassFileServer extends ClassServer {
 
     private String     		docroot;
     private static int 		DefaultServerPort = 9001;
-	private static String 	raiz = "C:/Users/danie/workspace/seguridad/src/ServidorWeb/";
+	private static String 	raiz = "D:/git/seguridad/src/ServidorWeb/";
 
 	//	ks.load(new FileInputStream("c:/comun/escuela/seguridad_bolonia/practica2013/cliente/testkeys.jks"), passphrase);
 
@@ -197,7 +197,7 @@ public class ClassFileServer extends ClassServer {
 	    System.setProperty("javax.net.ssl.keyStorePassword", "147258");
 	    // Almacen de confianza
 	    
-	    System.setProperty("javax.net.ssl.trustStore",          "C:/Users/danie/workspace/seguridad/src/" + "cacerts.jce");
+	    System.setProperty("javax.net.ssl.trustStore",          "D:/git/seguridad/src/" + "cacerts.jce");
 		System.setProperty("javax.net.ssl.trustStoreType",     "JCEKS");
 	    System.setProperty("javax.net.ssl.trustStorePassword", "147258");
 	}

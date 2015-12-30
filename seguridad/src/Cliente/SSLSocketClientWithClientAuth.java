@@ -37,7 +37,7 @@ import javax.net.ssl.TrustManager;
 
 public class SSLSocketClientWithClientAuth {
 
-	private static String 	raizMios ="C:/Users/danie/workspace/seguridad/src/Cliente/";
+	private static String 	raizMios ="D:/git/seguridad/src/Cliente/";
 
 	public static void main(String[] args) throws Exception {
 
@@ -184,7 +184,7 @@ public class SSLSocketClientWithClientAuth {
 		System.out.println("si");
 		// Almacen de confianza
 
-		System.setProperty("javax.net.ssl.trustStore",          "C:/Users/danie/workspace/seguridad/src/" + "cacerts.jce");
+		System.setProperty("javax.net.ssl.trustStore",          "D:/git/seguridad/src/" + "cacerts.jce");
 		System.setProperty("javax.net.ssl.trustStoreType",     "JCEKS");
 		System.setProperty("javax.net.ssl.trustStorePassword", "147258");
 

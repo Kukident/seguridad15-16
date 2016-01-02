@@ -30,15 +30,13 @@ import java.security.Signature;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
-//
-//
 
 
 public class FirmaCliente {
 
     public static void main(String[] args) throws Exception {
     String directorioRaiz="D:/git/seguridad/src/";
-    FileInputStream fmensaje   = new    FileInputStream(directorioRaiz + "nada.txt");      
+    FileInputStream fmensaje   = new    FileInputStream(directorioRaiz + "imagen.jpg");      
 
     String 		provider         = "SunJCE";
     String 		algoritmo        =  "SHA1withDSA";
@@ -112,7 +110,7 @@ public class FirmaCliente {
 	System.out.println("    VERIFICACION                    * ");
 	System.out.println("************************************* ");
 
-	FileInputStream fmensajeV   = new FileInputStream(directorioRaiz + "nada.txt");        
+	FileInputStream fmensajeV   = new FileInputStream(directorioRaiz + "imagen.jpg");        
 
 	// Creamos un objeto para verificar
 	Signature verifier=Signature.getInstance(algoritmo);	
@@ -121,7 +119,8 @@ public class FirmaCliente {
     // Obtener la clave publica del keystore
     PublicKey   publicKey  = ks.getCertificate("prueba").getPublicKey();
 
-    System.out.println("*** CLAVE PUBLICA ***");	System.out.println(publicKey);
+    System.out.println("*** CLAVE PUBLICA ***");
+    System.out.println(publicKey);
 	
     // Obtener el usuario del Certificado tomado del KeyStrore
     byte []   certificadoRaw  = ks.getCertificate("prueba").getEncoded();

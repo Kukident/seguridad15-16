@@ -2,6 +2,8 @@ package ServidorWeb;
 import java.io.*;
 import java.net.*;
 
+import Otros.Registrar_Documento_Request;
+
 /************************************************************
  * ClassServer.java -- a simple file server that can serve
  * Http get request in both clear and secure channel
@@ -10,84 +12,94 @@ import java.net.*;
  ************************************************************/
 public abstract class ClassServer implements Runnable {
 
-    private ServerSocket server = null;
+	private ServerSocket server = null;
 
-    /**
-     * Constructs a ClassServer based on <b>ss</b> and
-     * obtains a file's bytecodes using the method <b>getBytes</b>.
-     *
-     */
-    protected ClassServer(ServerSocket ss)
-    {
-    		server = ss;
-    		newListener();
-    }
+	/**
+	 * Constructs a ClassServer based on <b>ss</b> and
+	 * obtains a file's bytecodes using the method <b>getBytes</b>.
+	 *
+	 */
+	protected ClassServer(ServerSocket ss)
+	{
+		server = ss;
+		newListener();
+	}
 
-    /****************************************************************
-     * getBytes -- Returns an array of bytes containing the bytes for
-     * the file represented by the argument <b>path</b>.
-     *
-     * @return the bytes for the file
-     * @exception FileNotFoundException if the file corresponding
-     * to <b>path</b> could not be loaded.
-     * @exception IOException if error occurs reading the class
-     ***************************************************************/
-    public abstract 
-		    byte[] getBytes(String path)
-		    			throws IOException, FileNotFoundException;
+	/****************************************************************
+	 * getBytes -- Returns an array of bytes containing the bytes for
+	 * the file represented by the argument <b>path</b>.
+	 *
+	 * @return the bytes for the file
+	 * @exception FileNotFoundException if the file corresponding
+	 * to <b>path</b> could not be loaded.
+	 * @exception IOException if error occurs reading the class
+	 ***************************************************************/
+	public abstract 
+	byte[] getBytes(String path)
+			throws IOException, FileNotFoundException;
 
-    /***************************************************************
-     * run() -- The "listen" thread that accepts a connection to the
-     * server, parses the header to obtain the file name
-     * and sends back the bytes for the file (or error
-     * if the file is not found or the response was malformed).
-     **************************************************************/
-    public void run()
-    {
+	/***************************************************************
+	 * run() -- The "listen" thread that accepts a connection to the
+	 * server, parses the header to obtain the file name
+	 * and sends back the bytes for the file (or error
+	 * if the file is not found or the response was malformed).
+	 **************************************************************/
+	public void run()
+	{
 		Socket socket;
-	
+
 		// accept a connection
 		try 
 		{
-		    socket = server.accept();
-	
+			socket = server.accept();
+
 		} 
 		catch (IOException e) {
-		    System.out.println("Class Server died: " + e.getMessage());
-		    e.printStackTrace();
-		    return;
+			System.out.println("Class Server died: " + e.getMessage());
+			e.printStackTrace();
+			return;
 		}
-	
+
 		// create a new thread to accept the next connection
 		newListener();
 
-		try 
-		{
+		try {
+			ObjectOutputStream out = new ObjectOutputStream(socket.getOutputStream());
+			ObjectInputStream in = new ObjectInputStream(socket.getInputStream());
+			
+			Registrar_Documento_Request asdf = (Registrar_Documento_Request) in.readObject();
+			System.out.println(asdf.getNombreDoc());
+		} catch (IOException | ClassNotFoundException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}		
+	}
+
 			// Crea dos canales de salida, sobre el socket
 			//		- uno binario  (rawOut)
 			//		- uno de texto (out)
-			
-			OutputStream rawOut = socket.getOutputStream();
-	
+
+			/*OutputStream rawOut = socket.getOutputStream();
+
 		    PrintWriter out = new PrintWriter(
 										new BufferedWriter(
 											new OutputStreamWriter(rawOut)));		    
 		    try {
 				// Obtener path to class file from header
-	
+
 		    	BufferedReader in =
 				    new BufferedReader(
 					new InputStreamReader(socket.getInputStream()));
-				
+
 				String path = obtenerPath(in);
-	
+
 				// Recuperar bytecodes
-	
+
 				byte[] bytecodes = getBytes(path);
-	
-				
+
+
 				// send bytecodes in response (assumes HTTP/1.0 or later)
-		
+
 				try 
 				{
 				    out.print("HTTP/1.0 200 OK\r\n");
@@ -95,7 +107,7 @@ public abstract class ClassServer implements Runnable {
 						   "\r\n");
 				    out.print("Content-Type: text/html\r\n\r\n");
 				    out.flush();
-				
+
 				    rawOut.write(bytecodes);
 				    rawOut.flush();
 				} 
@@ -103,7 +115,7 @@ public abstract class ClassServer implements Runnable {
 				    ie.printStackTrace();
 				    return;
 				}
-	
+
 		    } 
 		    catch (Exception e) {
 				e.printStackTrace();
@@ -112,36 +124,36 @@ public abstract class ClassServer implements Runnable {
 				out.println("Content-Type: text/html\r\n\r\n");
 				out.flush();
 		    }
-	
+
 		} catch (IOException ex) {
 		    // eat exception (could log error to log file, but
 		    // write out to stdout for now).
 		    System.out.println("error writing response: " + ex.getMessage());
 		    ex.printStackTrace();
-	
-		} finally {
-		    try {
-			socket.close();
-		    } catch (IOException e) {
-		    }
-		}
-    }
 
-    /********************************************************
-     * newListener()
-     * 			Create a new thread to listen.
-     *******************************************************/
-    private void newListener()
-    {
-    	(new Thread(this)).start();
-    }
+			 } finally {
+				 try {
+					 socket.close();
+				 } catch (IOException e) {
+				 }
+			 }
+	}
 
-    /*******************************************************
-     * 	obtenerPath 
-     * 			Returns the path to the file obtained from
-     * 			parsing the HTML header.
-     *******************************************************/
-      private static String obtenerPath(BufferedReader in) throws IOException
+	/********************************************************
+	 * newListener()
+	 * 			Create a new thread to listen.
+	 *******************************************************/
+	private void newListener()
+	{
+		(new Thread(this)).start();
+	}
+
+	/*******************************************************
+	 * 	obtenerPath 
+	 * 			Returns the path to the file obtained from
+	 * 			parsing the HTML header.
+	 *******************************************************/
+	/*  private static String obtenerPath(BufferedReader in) throws IOException
       {
     		String line = in.readLine();
     		String path = "";
@@ -169,5 +181,5 @@ public abstract class ClassServer implements Runnable {
     		} else {
     		    throw new IOException("Cabecera incorrecta");
     		}
-    }
+    }*/
 }

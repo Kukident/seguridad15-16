@@ -11,12 +11,18 @@ package Cliente;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
+import java.io.ByteArrayInputStream;
+import java.io.DataOutputStream;
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
+import java.nio.file.Files;
 import java.security.KeyStore;
 import java.security.PrivateKey;
 import java.util.Scanner;
@@ -25,6 +31,10 @@ import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLSocket;
 import javax.net.ssl.SSLSocketFactory;
+
+import Otros.Firma;
+import Otros.Registrar_Documento_Request;
+import Otros.leerfichero;
 
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
@@ -49,9 +59,9 @@ public class SSLSocketClientWithClientAuth {
 		int 	port 		= -1;
 		String 	path 		= null;
 		char[] 	contraseña 		  = "147258".toCharArray();
+		String idPropietario = null;
 
 		System.out.println("----------------Hola soy un cliente");
-
 		definirKeyStores();
 
 		for (int i = 0; i < args.length; i++)
@@ -97,28 +107,21 @@ public class SSLSocketClientWithClientAuth {
 				ctx.init(kmf.getKeyManagers(), null, null);
 
 				factory = ctx.getSocketFactory();
-				
-				/////////////////////////Atencion al parkour
-				String		ks_file			= raizMios + "cliente.jce";
-				char[]      ks_password  	= "147258".toCharArray();
-				char[]      key_password 	= "147258".toCharArray();
-				ks = KeyStore.getInstance("JCEKS");
 
-				ks.load(new FileInputStream(ks_file),  ks_password);
 
-				KeyStore.PrivateKeyEntry pkEntry = (KeyStore.PrivateKeyEntry)
-			 	      		   						ks.getEntry("prueba",
-			                                        new KeyStore.PasswordProtection(key_password));
-			 
-			  
-				
-				
-				
-				     X509Certificate cert = (X509Certificate)pkEntry.getCertificate();
-				     System.out.println(cert.getIssuerDN());
+				byte []   certificadoRaw  = ks.getCertificate("prueba").getEncoded();
 
-				
-				
+				ByteArrayInputStream inStream = null;
+
+				inStream = new ByteArrayInputStream(certificadoRaw);
+				CertificateFactory cf = CertificateFactory.getInstance("X.509");
+				X509Certificate cert1 = (X509Certificate)cf.generateCertificate(inStream);
+				idPropietario=cert1.getIssuerDN().toString();
+				System.out.println ("Usuario certificado " +
+						idPropietario);  
+
+
+
 
 				/*********************************************************************
 				 * Suites SSL del contexto
@@ -162,8 +165,47 @@ public class SSLSocketClientWithClientAuth {
 
 			System.out.println ("Fin OK SSL Handshake");
 
+			/*Menu del programa*/
+			boolean correcto=false;
+			Scanner entrada = new Scanner(System.in);
+			ObjectOutputStream out = new ObjectOutputStream(socket.getOutputStream());
+			ObjectInputStream in = new ObjectInputStream(socket.getInputStream());
+			while (!correcto) {
+				System.out.println("Escoge una opcion:");
+				System.out.println("1. Registrar Documento");
+				System.out.println("2. Recuperar Documento");
+				System.out.println("3. Salir");
+				if (entrada.hasNextInt()){
+					switch (entrada.nextInt()) {
+					case 1:
+						System.out.println("Registrar Documento");
+						try {
+							Registrar_Documento_Request registrar = new Registrar_Documento_Request(idPropietario, "HUEHUEHUE", "PUBLICO", leerfichero.leer(raizMios+"imagen.jpg"));
+							out.writeObject(registrar);
+						} catch (Exception e) {
+							e.printStackTrace();
+						}
+						break;
 
-			PrintWriter out = new PrintWriter(
+					case 2:
+						System.out.println("Recuperar Documento");
+						break;
+
+					default:
+						System.out.println("Salir");
+						System.exit(1);
+						break;
+					}
+					entrada.close(); //Cerramos flujo de entrada
+					correcto=true;// y salimos del while de seleccion
+				}
+				else{
+					entrada.nextLine();
+				}
+			}
+
+
+			/*PrintWriter out = new PrintWriter(
 					new BufferedWriter(
 							new OutputStreamWriter(
 									socket.getOutputStream())));
@@ -174,19 +216,19 @@ public class SSLSocketClientWithClientAuth {
 			/*
 			 * Make sure there were no surprises
 			 */
-			if (out.checkError())
+		/*	if (out.checkError())
 				System.out.println(
 						"SSLSocketClient: java.io.PrintWriter error");
 
 			/* read response */
-			BufferedReader in = new BufferedReader(
+			/*BufferedReader in = new BufferedReader(
 					new InputStreamReader(
 							socket.getInputStream()));
 
 			String inputLine;
 
 			while ((inputLine = in.readLine()) != null)
-				System.out.println(inputLine);
+				System.out.println(inputLine);*/
 
 			in.close();
 			out.close();
@@ -195,7 +237,7 @@ public class SSLSocketClientWithClientAuth {
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
-	 
+
 	}
 
 	/******************************************************

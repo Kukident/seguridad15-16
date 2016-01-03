@@ -1,6 +1,8 @@
 package ServidorWeb;
 import java.io.*;
 import java.net.*;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 
 import Otros.Registrar_Documento_Request;
 
@@ -13,6 +15,7 @@ import Otros.Registrar_Documento_Request;
 public abstract class ClassServer implements Runnable {
 
 	private ServerSocket server = null;
+	private int idRegistro=0;
 
 	/**
 	 * Constructs a ClassServer based on <b>ss</b> and
@@ -47,6 +50,7 @@ public abstract class ClassServer implements Runnable {
 	public void run()
 	{
 		Socket socket;
+		String timestamp;
 
 		// accept a connection
 		try 
@@ -66,20 +70,37 @@ public abstract class ClassServer implements Runnable {
 		try {
 			ObjectOutputStream out = new ObjectOutputStream(socket.getOutputStream());
 			ObjectInputStream in = new ObjectInputStream(socket.getInputStream());
-			
-			Registrar_Documento_Request asdf = (Registrar_Documento_Request) in.readObject();
-			System.out.println(asdf.getNombreDoc());
-		} catch (IOException | ClassNotFoundException e) {
+
+			Object recibido =  in.readObject();
+			if (recibido instanceof Registrar_Documento_Request){
+				Registrar_Documento_Request rdr=((Registrar_Documento_Request) recibido);
+				timestamp=gettimestamp();
+				System.out.println(rdr.getNombreDoc());
+				if (Otros.VerificarFirma.Verificar(rdr.getDocumento(), "D:/git/seguridad/src/cacerts.jce", rdr.getFirmaDoc(),"SHA1withDSA",1024)){
+					
+					FirmaRegistrador fr = new FirmaRegistrador(idRegistro++, timestamp, rdr.getDocumento(), rdr.getFirmaDoc());
+					Documento doc = new Documento(rdr.getDocumento(), rdr.getFirmaDoc(), idRegistro, timestamp, 
+							Otros.Firma.Firmar(serialize(fr), "D:/git/seguridad/src/ServidorWeb/servidor.jce","servidor","SHA1withRSA",2048));
+					FileOutputStream fout = new FileOutputStream("D:/git/seguridad/src/hola.hue");
+					ObjectOutputStream oos = new ObjectOutputStream(fout);
+					oos.writeObject(doc);
+				}
+				else {
+					System.out.println("No");
+					//Devolver respuesta de error
+				}
+			}
+		} catch (Exception e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}		
 	}
 
-			// Crea dos canales de salida, sobre el socket
-			//		- uno binario  (rawOut)
-			//		- uno de texto (out)
+	// Crea dos canales de salida, sobre el socket
+	//		- uno binario  (rawOut)
+	//		- uno de texto (out)
 
-			/*OutputStream rawOut = socket.getOutputStream();
+	/*OutputStream rawOut = socket.getOutputStream();
 
 		    PrintWriter out = new PrintWriter(
 										new BufferedWriter(
@@ -152,6 +173,7 @@ public abstract class ClassServer implements Runnable {
 	 * 	obtenerPath 
 	 * 			Returns the path to the file obtained from
 	 * 			parsing the HTML header.
+	 * @return 
 	 *******************************************************/
 	/*  private static String obtenerPath(BufferedReader in) throws IOException
       {
@@ -182,4 +204,17 @@ public abstract class ClassServer implements Runnable {
     		    throw new IOException("Cabecera incorrecta");
     		}
     }*/
+	
+	private String gettimestamp(){
+		Date timestamp = new Date();
+		SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy 'at' HH:mm:ss z");
+		return sdf.format(timestamp);
+	}
+	
+	public static byte[] serialize(Object obj) throws IOException {
+	    ByteArrayOutputStream out = new ByteArrayOutputStream();
+	    ObjectOutputStream os = new ObjectOutputStream(out);
+	    os.writeObject(obj);
+	    return out.toByteArray();
+	}
 }

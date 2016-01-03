@@ -36,7 +36,7 @@ public class FirmaCliente {
 
     public static void main(String[] args) throws Exception {
     String directorioRaiz="D:/git/seguridad/src/";
-    FileInputStream fmensaje   = new    FileInputStream(directorioRaiz + "imagen.jpg");      
+    FileInputStream fmensaje   = new    FileInputStream(directorioRaiz + "Cliente/imagen.jpg");      
 
     String 		provider         = "SunJCE";
     String 		algoritmo        =  "SHA1withDSA";
@@ -110,7 +110,7 @@ public class FirmaCliente {
 	System.out.println("    VERIFICACION                    * ");
 	System.out.println("************************************* ");
 
-	FileInputStream fmensajeV   = new FileInputStream(directorioRaiz + "imagen.jpg");        
+	FileInputStream fmensajeV   = new FileInputStream(directorioRaiz + "Cliente/imagen.jpg");        
 
 	// Creamos un objeto para verificar
 	Signature verifier=Signature.getInstance(algoritmo);	

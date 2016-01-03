@@ -1,4 +1,5 @@
 package Otros;
+import java.io.ByteArrayInputStream;
 import java.io.FileInputStream;
 import java.security.KeyStore;
 import java.security.PrivateKey;
@@ -6,16 +7,15 @@ import java.security.Signature;
 
 public class Firma {
 
-	public static byte [] Firmar() throws Exception{
-		String directorioRaiz="D:/git/seguridad/src/";
-		FileInputStream fmensaje   = new    FileInputStream(directorioRaiz + "imagen.jpg");      
+	public static byte [] Firmar(byte [] file, String path, String ksentry, String algoritmo, int longitud_clave) throws Exception{
+		ByteArrayInputStream fmensaje   = new    ByteArrayInputStream(file);      
 
 		String 		provider         = "SunJCE";
-		String 		algoritmo        =  "SHA1withDSA";
+		//String 		algoritmo        =  "SHA1withDSA";
 		String 		algoritmo_base   =  "RSA";    
-		int    		longitud_clave   =  1024;         
+		//int    		longitud_clave   =  1024;         
 		int    		longbloque;
-		byte   		bloque[]         = new byte[1024];
+		byte   		bloque[]         = new byte[longitud_clave];
 		long   		filesize         = 0;
 
 		// Variables para el KeyStore
@@ -23,7 +23,7 @@ public class Firma {
 		KeyStore    ks;
 		char[]      ks_password  	= "147258".toCharArray();
 		char[]      key_password 	= "147258".toCharArray();
-		String		ks_file			= directorioRaiz + "Cliente/cliente.jce";	    
+		String		ks_file			= path;	    
 
 
 		// Obtener la clave privada del keystore
@@ -33,7 +33,7 @@ public class Firma {
 		ks.load(new FileInputStream(ks_file),  ks_password);
 
 		KeyStore.PrivateKeyEntry pkEntry = (KeyStore.PrivateKeyEntry)
-				ks.getEntry("prueba",
+				ks.getEntry(ksentry,
 						new KeyStore.PasswordProtection(key_password));
 
 		PrivateKey privateKey = pkEntry.getPrivateKey();
@@ -65,8 +65,8 @@ public class Firma {
 
 		firma = signer.sign();
 
-		double  v = firma.length;
-		/*System.out.println("*** FIRMA: ****");
+		/*double  v = firma.length;
+		System.out.println("*** FIRMA: ****");
 		for (int i=0; i<firma.length; i++)
 		{
 			System.out.print(firma[i] + " ");

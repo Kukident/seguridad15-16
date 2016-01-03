@@ -1,0 +1,5 @@
+/*Cosas por hacer*/
+
+-Detectar tipo de algoritmo (RSA y DSA) y longitud de la clave para pasarselo a las funciones de firmar y de verificar
+-Poner bien rutas a los almacenes de clave
+-Mensajes de respuesta

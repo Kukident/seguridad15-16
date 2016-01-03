@@ -180,7 +180,7 @@ public class SSLSocketClientWithClientAuth {
 					case 1:
 						System.out.println("Registrar Documento");
 						try {
-							Registrar_Documento_Request registrar = new Registrar_Documento_Request(idPropietario, "HUEHUEHUE", "PUBLICO", leerfichero.leer(raizMios+"imagen.jpg"));
+							Registrar_Documento_Request registrar = new Registrar_Documento_Request(idPropietario, "HUEHUEHUE", "PUBLICO", leerfichero.leer(raizMios+"imagen.jpg"),raizMios+"Cliente.jce");
 							out.writeObject(registrar);
 						} catch (Exception e) {
 							e.printStackTrace();

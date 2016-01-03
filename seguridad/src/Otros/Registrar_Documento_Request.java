@@ -9,12 +9,17 @@ public class Registrar_Documento_Request implements Serializable {
 	private byte [] documento;
 	private byte [] firmaDoc;
 	
-	public Registrar_Documento_Request(String idPropietario, String nombreDoc, String tipoConfidencialidad, byte [] documento){
+	public Registrar_Documento_Request(String idPropietario, String nombreDoc, String tipoConfidencialidad, byte [] documento, String path){
 		this.idPropietario=idPropietario;
 		this.nombreDoc=nombreDoc;
 		this.tipoConfidencialidad=tipoConfidencialidad;
 		this.documento=documento;
-		this.firmaDoc=firmaDoc;
+		try {
+			this.firmaDoc=Otros.Firma.Firmar(documento, path,"prueba","SHA1withDSA",1024);
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 		
 	}
 

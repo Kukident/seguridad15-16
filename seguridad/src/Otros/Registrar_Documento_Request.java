@@ -20,7 +20,12 @@ public class Registrar_Documento_Request implements Serializable {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		
+		try {
+			//ServidorWeb.CifradoDescifrado.main(documento);
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 	}
 
 	public String getIdPropietario() {

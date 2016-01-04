@@ -9,22 +9,14 @@ package Cliente;
  *************************************************************************/
 
 
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
 import java.io.ByteArrayInputStream;
-import java.io.DataOutputStream;
-import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
-import java.io.OutputStreamWriter;
-import java.io.PrintWriter;
-import java.nio.file.Files;
 import java.security.KeyStore;
-import java.security.PrivateKey;
+import java.security.cert.CertificateFactory;
+import java.security.cert.X509Certificate;
 import java.util.Scanner;
 
 import javax.net.ssl.KeyManagerFactory;
@@ -32,12 +24,10 @@ import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLSocket;
 import javax.net.ssl.SSLSocketFactory;
 
-import Otros.Firma;
+import Otros.Recuperar_Documento_Request;
+import Otros.Recuperar_Documento_Response;
 import Otros.Registrar_Documento_Request;
 import Otros.leerfichero;
-
-import java.security.cert.CertificateFactory;
-import java.security.cert.X509Certificate;
 
 /****************************************************************************
  * This example shows how to set up a key manager to do client
@@ -180,7 +170,7 @@ public class SSLSocketClientWithClientAuth {
 					case 1:
 						System.out.println("Registrar Documento");
 						try {
-							Registrar_Documento_Request registrar = new Registrar_Documento_Request(idPropietario, "HUEHUEHUE", "PUBLICO", leerfichero.leer(raizMios+"imagen.jpg"),raizMios+"Cliente.jce");
+							Registrar_Documento_Request registrar = new Registrar_Documento_Request(idPropietario, "HUEHUEHUE", "publico", leerfichero.leer(raizMios+"imagen.jpg"),raizMios+"Cliente.jce");
 							out.writeObject(registrar);
 						} catch (Exception e) {
 							e.printStackTrace();
@@ -189,6 +179,10 @@ public class SSLSocketClientWithClientAuth {
 
 					case 2:
 						System.out.println("Recuperar Documento");
+						Recuperar_Documento_Request recuperar = new Recuperar_Documento_Request(idPropietario, 3);
+						out.writeObject(recuperar);
+						Recuperar_Documento_Response recibido =  (Recuperar_Documento_Response) in.readObject();
+						System.out.println("Leyendo objeto recibido   "+recibido.getSelloTemporal());
 						break;
 
 					default:
@@ -216,7 +210,7 @@ public class SSLSocketClientWithClientAuth {
 			/*
 			 * Make sure there were no surprises
 			 */
-		/*	if (out.checkError())
+			/*	if (out.checkError())
 				System.out.println(
 						"SSLSocketClient: java.io.PrintWriter error");
 

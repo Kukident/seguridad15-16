@@ -1,9 +1,18 @@
 package ServidorWeb;
-import java.io.*;
-import java.net.*;
+import java.io.ByteArrayOutputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.net.ServerSocket;
+import java.net.Socket;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.HashMap;
 
+import Otros.Recuperar_Documento_Request;
+import Otros.Recuperar_Documento_Response;
 import Otros.Registrar_Documento_Request;
 
 /************************************************************
@@ -16,6 +25,7 @@ public abstract class ClassServer implements Runnable {
 
 	private ServerSocket server = null;
 	private int idRegistro=0;
+	private static HashMap<Integer, Fichero> BD = new HashMap<Integer, Fichero>();
 
 	/**
 	 * Constructs a ClassServer based on <b>ss</b> and
@@ -26,6 +36,7 @@ public abstract class ClassServer implements Runnable {
 	{
 		server = ss;
 		newListener();
+		
 	}
 
 	/****************************************************************
@@ -51,6 +62,7 @@ public abstract class ClassServer implements Runnable {
 	{
 		Socket socket;
 		String timestamp;
+		
 
 		// accept a connection
 		try 
@@ -70,6 +82,7 @@ public abstract class ClassServer implements Runnable {
 		try {
 			ObjectOutputStream out = new ObjectOutputStream(socket.getOutputStream());
 			ObjectInputStream in = new ObjectInputStream(socket.getInputStream());
+			FileOutputStream fout;
 
 			Object recibido =  in.readObject();
 			if (recibido instanceof Registrar_Documento_Request){
@@ -77,18 +90,54 @@ public abstract class ClassServer implements Runnable {
 				timestamp=gettimestamp();
 				System.out.println(rdr.getNombreDoc());
 				if (Otros.VerificarFirma.Verificar(rdr.getDocumento(), "D:/git/seguridad/src/cacerts.jce", rdr.getFirmaDoc(),"SHA1withDSA",1024)){
-					
+
 					FirmaRegistrador fr = new FirmaRegistrador(idRegistro++, timestamp, rdr.getDocumento(), rdr.getFirmaDoc());
-					Documento doc = new Documento(rdr.getDocumento(), rdr.getFirmaDoc(), idRegistro, timestamp, 
-							Otros.Firma.Firmar(serialize(fr), "D:/git/seguridad/src/ServidorWeb/servidor.jce","servidor","SHA1withRSA",2048));
-					FileOutputStream fout = new FileOutputStream("D:/git/seguridad/src/hola.hue");
+					Fichero doc = new Fichero(rdr.getDocumento(), rdr.getFirmaDoc(), idRegistro, timestamp, 
+							Otros.Firma.Firmar(serialize(fr), "D:/git/seguridad/src/ServidorWeb/servidor.jce","servidor","SHA1withRSA",2048), rdr.getIdPropietario(),false);
+
+					if (rdr.getTipoConfidencialidad().toLowerCase().equals("privado")) {
+						CifradoDescifrado.cifrar(doc);
+						fout = new FileOutputStream("D:/git/seguridad/src/hola.cif");
+					}
+					else{
+						fout = new FileOutputStream("D:/git/seguridad/src/hola.sig");
+					}
 					ObjectOutputStream oos = new ObjectOutputStream(fout);
 					oos.writeObject(doc);
+					BD.put(idRegistro, doc);
+					System.out.println("////////////////////"+BD.toString());
+					fout.close();
+					oos.close();
+					out.close();
 				}
 				else {
 					System.out.println("No");
 					//Devolver respuesta de error
 				}
+			}
+			if (recibido instanceof Recuperar_Documento_Request) {
+				System.out.println("----------------23242342--------------------");
+				System.out.println(BD.toString());
+				Recuperar_Documento_Request rdr = (Recuperar_Documento_Request) recibido;
+				if (BD.containsKey(rdr.getIdRegistro())) {
+					if (BD.get(rdr.getIdRegistro()).isPrivado()) {
+						if (BD.get(rdr.getIdRegistro()).getIdPropietario().equals(rdr.getIdPropietario())){
+							//Desciframos y respondemos con el fichero
+						}
+						else{
+							System.out.println("Acceso no permitido");
+						}				
+					}
+					//Respondemos con el fichero de vuelta
+					Recuperar_Documento_Response response = new Recuperar_Documento_Response(0, rdr.getIdRegistro(), BD.get(rdr.getIdRegistro()).getSelloTemporal(),
+							BD.get(rdr.getIdRegistro()).getDocumento(),BD.get(rdr.getIdRegistro()).getFirmaRegistrador());
+					out.writeObject(response);
+				}
+				else{
+					System.out.println("Fichero no encontrado");
+				}
+
+
 			}
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
@@ -204,17 +253,17 @@ public abstract class ClassServer implements Runnable {
     		    throw new IOException("Cabecera incorrecta");
     		}
     }*/
-	
+
 	private String gettimestamp(){
 		Date timestamp = new Date();
 		SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy 'at' HH:mm:ss z");
 		return sdf.format(timestamp);
 	}
-	
+
 	public static byte[] serialize(Object obj) throws IOException {
-	    ByteArrayOutputStream out = new ByteArrayOutputStream();
-	    ObjectOutputStream os = new ObjectOutputStream(out);
-	    os.writeObject(obj);
-	    return out.toByteArray();
+		ByteArrayOutputStream out = new ByteArrayOutputStream();
+		ObjectOutputStream os = new ObjectOutputStream(out);
+		os.writeObject(obj);
+		return out.toByteArray();
 	}
 }

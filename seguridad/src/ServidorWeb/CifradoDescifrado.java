@@ -1,46 +1,13 @@
 package ServidorWeb;
 
-/**********************************************************************
-Nombre:
-	Cifrar_Descifrar_Simetrico_SunJCE_v1.0
-
-Descripcion:
-	Codigo JAVA para cifrar y descifrar un fichero, usando cualquiera
-	de los algoritmos de cifrado simetrico del provider “SunJCE”, tanto
-	de cifrado en bloque como de cifrado en flujo.
-
-Notas de uso:
-1.	No valido para cifrado PBE
-2.	Permite medir el tiempo y velocidad de cifrado.
-
-Fecha:
-	28/11/2012
-Autor:
-          	Francisco J. Fernandez Masaguer
-	ETSI TELECOMUNACION VIGO
-	Departamento Ingenieria Telematica
- 	email: francisco.fernandez@det.uvigo.es
-
-          Asignatura:
-	Curso  2012/2013.
-
- ***********************************************************/
-import java.io.BufferedWriter;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.FileWriter;
-import java.io.IOException;
 import java.security.AlgorithmParameters;
 import java.security.KeyStore;
-import java.security.KeyStoreException;
 
 import javax.crypto.Cipher;
-import javax.crypto.KeyGenerator;
-import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
-import javax.swing.text.Document;
 
 
 public class CifradoDescifrado {

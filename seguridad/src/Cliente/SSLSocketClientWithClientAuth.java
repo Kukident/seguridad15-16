@@ -179,7 +179,7 @@ public class SSLSocketClientWithClientAuth {
 
 					case 2:
 						System.out.println("Recuperar Documento");
-						Recuperar_Documento_Request recuperar = new Recuperar_Documento_Request(idPropietario, 3);
+						Recuperar_Documento_Request recuperar = new Recuperar_Documento_Request(idPropietario, 1);
 						out.writeObject(recuperar);
 						Recuperar_Documento_Response recibido =  (Recuperar_Documento_Response) in.readObject();
 						System.out.println("Leyendo objeto recibido   "+recibido.getSelloTemporal());

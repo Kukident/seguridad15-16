@@ -1,4 +1,5 @@
 package ServidorWeb;
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
@@ -14,6 +15,7 @@ import java.util.HashMap;
 import Otros.Recuperar_Documento_Request;
 import Otros.Recuperar_Documento_Response;
 import Otros.Registrar_Documento_Request;
+import Otros.leerfichero;
 
 /************************************************************
  * ClassServer.java -- a simple file server that can serve
@@ -25,7 +27,7 @@ public abstract class ClassServer implements Runnable {
 
 	private ServerSocket server = null;
 	private int idRegistro=0;
-	private static HashMap<Integer, Fichero> BD = new HashMap<Integer, Fichero>();
+	private static HashMap<Integer, String> BD = new HashMap<Integer, String>();
 
 	/**
 	 * Constructs a ClassServer based on <b>ss</b> and
@@ -36,7 +38,7 @@ public abstract class ClassServer implements Runnable {
 	{
 		server = ss;
 		newListener();
-		
+System.out.println("Borrame");
 	}
 
 	/****************************************************************
@@ -62,7 +64,7 @@ public abstract class ClassServer implements Runnable {
 	{
 		Socket socket;
 		String timestamp;
-		
+
 
 		// accept a connection
 		try 
@@ -97,14 +99,17 @@ public abstract class ClassServer implements Runnable {
 
 					if (rdr.getTipoConfidencialidad().toLowerCase().equals("privado")) {
 						CifradoDescifrado.cifrar(doc);
-						fout = new FileOutputStream("D:/git/seguridad/src/hola.cif");
+						fout = new FileOutputStream("D:/git/seguridad/src/"+idRegistro+rdr.getIdPropietario()+".cif");
 					}
 					else{
-						fout = new FileOutputStream("D:/git/seguridad/src/hola.sig");
+						fout = new FileOutputStream("D:/git/seguridad/src/"+idRegistro+"_"+rdr.getIdPropietario()+".sig");
 					}
 					ObjectOutputStream oos = new ObjectOutputStream(fout);
 					oos.writeObject(doc);
-					BD.put(idRegistro, doc);
+					//					doc.setDocumento(null);//Vaciamos el documento para no llenar la memoria, ya que el documento esta guardado en disco.
+					//					doc.setFirmaDoc(null);
+					//					doc.setFirmaRegistrador(null);
+					BD.put(idRegistro, rdr.getIdPropietario());
 					System.out.println("////////////////////"+BD.toString());
 					fout.close();
 					oos.close();
@@ -120,8 +125,11 @@ public abstract class ClassServer implements Runnable {
 				System.out.println(BD.toString());
 				Recuperar_Documento_Request rdr = (Recuperar_Documento_Request) recibido;
 				if (BD.containsKey(rdr.getIdRegistro())) {
-					if (BD.get(rdr.getIdRegistro()).isPrivado()) {
-						if (BD.get(rdr.getIdRegistro()).getIdPropietario().equals(rdr.getIdPropietario())){
+					byte [] ficherobytes = leerfichero.leer("D:/git/seguridad/src/"+Integer.toString(rdr.getIdRegistro())+"_"+rdr.getIdPropietario()+".sig");
+					Fichero fichero;
+					fichero=(Fichero) deserialize(ficherobytes);
+					if (fichero.isPrivado()) {
+						if (BD.get(rdr.getIdRegistro()).equals(rdr.getIdPropietario())){
 							//Desciframos y respondemos con el fichero
 						}
 						else{
@@ -129,15 +137,15 @@ public abstract class ClassServer implements Runnable {
 						}				
 					}
 					//Respondemos con el fichero de vuelta
-					Recuperar_Documento_Response response = new Recuperar_Documento_Response(0, rdr.getIdRegistro(), BD.get(rdr.getIdRegistro()).getSelloTemporal(),
-							BD.get(rdr.getIdRegistro()).getDocumento(),BD.get(rdr.getIdRegistro()).getFirmaRegistrador());
+					Recuperar_Documento_Response response = new Recuperar_Documento_Response(0, rdr.getIdRegistro(), fichero.getSelloTemporal(),
+							fichero.getDocumento(),fichero.getFirmaRegistrador());
 					out.writeObject(response);
 				}
 				else{
 					System.out.println("Fichero no encontrado");
 				}
 
-
+				out.close();
 			}
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
@@ -265,5 +273,10 @@ public abstract class ClassServer implements Runnable {
 		ObjectOutputStream os = new ObjectOutputStream(out);
 		os.writeObject(obj);
 		return out.toByteArray();
+	}
+	public static Object deserialize(byte[] data) throws IOException, ClassNotFoundException {
+		ByteArrayInputStream in = new ByteArrayInputStream(data);
+		ObjectInputStream is = new ObjectInputStream(in);
+		return is.readObject();
 	}
 }

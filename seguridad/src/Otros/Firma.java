@@ -30,7 +30,7 @@ public class Firma {
 
 		ks = KeyStore.getInstance("JCEKS");
 
-		ks.load(new FileInputStream(ks_file),  ks_password);
+		ks.load(new FileInputStream(ks_file),  ks_password);	
 
 		KeyStore.PrivateKeyEntry pkEntry = (KeyStore.PrivateKeyEntry)
 				ks.getEntry(ksentry,

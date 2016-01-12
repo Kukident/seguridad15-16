@@ -10,13 +10,17 @@ package Cliente;
 
 
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.security.KeyStore;
+import java.security.MessageDigest;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
+import java.util.HashMap;
 import java.util.Scanner;
 
 import javax.net.ssl.KeyManagerFactory;
@@ -27,7 +31,9 @@ import javax.net.ssl.SSLSocketFactory;
 import Otros.Recuperar_Documento_Request;
 import Otros.Recuperar_Documento_Response;
 import Otros.Registrar_Documento_Request;
+import Otros.Registrar_Documento_Response;
 import Otros.leerfichero;
+import ServidorWeb.Fichero;
 
 /****************************************************************************
  * This example shows how to set up a key manager to do client
@@ -50,6 +56,8 @@ public class SSLSocketClientWithClientAuth {
 		String 	path 		= null;
 		char[] 	contraseña 		  = "147258".toCharArray();
 		String idPropietario = null;
+		HashMap<Integer, byte []> BD = new HashMap<Integer, byte []>();
+
 
 		System.out.println("----------------Hola soy un cliente");
 		definirKeyStores();
@@ -160,18 +168,48 @@ public class SSLSocketClientWithClientAuth {
 			Scanner entrada = new Scanner(System.in);
 			ObjectOutputStream out = new ObjectOutputStream(socket.getOutputStream());
 			ObjectInputStream in = new ObjectInputStream(socket.getInputStream());
+			FileOutputStream fout;
 			while (!correcto) {
 				System.out.println("Escoge una opcion:");
 				System.out.println("1. Registrar Documento");
 				System.out.println("2. Recuperar Documento");
-				System.out.println("3. Salir");
+				System.out.println("3. Listar Documentos");
+				System.out.println("4. Salir");
 				if (entrada.hasNextInt()){
 					switch (entrada.nextInt()) {
 					case 1:
 						System.out.println("Registrar Documento");
 						try {
-							Registrar_Documento_Request registrar = new Registrar_Documento_Request(idPropietario, "HUEHUEHUE", "publico", leerfichero.leer(raizMios+"imagen.jpg"),raizMios+"Cliente.jce");
+							Registrar_Documento_Request registrar = new Registrar_Documento_Request(idPropietario, "HUEHUEHUE", "privado", leerfichero.leer(raizMios+"Enviar/imagen.jpg"),raizMios+"Cliente.jce");
 							out.writeObject(registrar);
+
+							Registrar_Documento_Response recibido = (Registrar_Documento_Response) in.readObject();
+
+							if (recibido.getIdError()==0) {
+
+
+								ByteArrayOutputStream ops = new ByteArrayOutputStream();
+								byte fr [];
+								ops.write(registrar.getDocumento());
+								ops.write(recibido.getIdRegistro());
+								ops.write(recibido.getSelloTemporal().getBytes());
+								ops.write(registrar.getFirmaDoc());
+								fr = ops.toByteArray();
+								ops.close();
+
+								if (Otros.VerificarFirma.Verificar(fr, "D:/git/seguridad/src/cacerts.jce", recibido.getFirmaRegistrador(), "SHA1withRSA",2048,"servidor")) {
+									System.out.println("Documento correctamente registrado");
+									MessageDigest digest = MessageDigest.getInstance("SHA-256");
+									byte[] hash = digest.digest(registrar.getDocumento());
+									BD.put(recibido.getIdRegistro(), hash);
+								}
+								else{
+									System.out.println("Firma registrador incorrecta");
+								}
+							}
+							else{
+								System.out.println(recibido.getIdError());
+							}
 						} catch (Exception e) {
 							e.printStackTrace();
 						}
@@ -183,6 +221,16 @@ public class SSLSocketClientWithClientAuth {
 						out.writeObject(recuperar);
 						Recuperar_Documento_Response recibido =  (Recuperar_Documento_Response) in.readObject();
 						System.out.println("Leyendo objeto recibido   "+recibido.getSelloTemporal());
+
+						/*FirmaRegistrador fr = new FirmaRegistrador(recibido.getIdRegistro(), recibido.getSelloTemporal(), recibido.getDocumento(), Firma.Firmar(recibido.getDocumento(), raizMios+"Cliente.jce", "prueba","SHA1withDSA",1024));
+						if (Otros.VerificarFirma.Verificar(ClassServer.serialize(fr), "D:/git/seguridad/src/cacerts.jce", recibido.getFirmaRegistrador(), "SHA1withRSA",2048)) {
+							System.out.println("-------------Firma Correcta");
+						}
+						else{
+							System.out.println("*********Ups");
+						}*/
+						fout = new FileOutputStream("D:/git/seguridad/src/Cliente/Recibir/huehue.jpg");
+						fout.write(recibido.getDocumento());
 						break;
 
 					default:

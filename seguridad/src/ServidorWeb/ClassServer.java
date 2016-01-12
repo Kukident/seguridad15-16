@@ -15,7 +15,7 @@ import java.util.HashMap;
 import Otros.Recuperar_Documento_Request;
 import Otros.Recuperar_Documento_Response;
 import Otros.Registrar_Documento_Request;
-import Otros.leerfichero;
+import Otros.Registrar_Documento_Response;
 
 /************************************************************
  * ClassServer.java -- a simple file server that can serve
@@ -27,7 +27,7 @@ public abstract class ClassServer implements Runnable {
 
 	private ServerSocket server = null;
 	private int idRegistro=0;
-	private static HashMap<Integer, String> BD = new HashMap<Integer, String>();
+	private static HashMap<Integer, Fichero> BD = new HashMap<Integer, Fichero>();
 
 	/**
 	 * Constructs a ClassServer based on <b>ss</b> and
@@ -38,7 +38,6 @@ public abstract class ClassServer implements Runnable {
 	{
 		server = ss;
 		newListener();
-System.out.println("Borrame");
 	}
 
 	/****************************************************************
@@ -91,61 +90,82 @@ System.out.println("Borrame");
 				Registrar_Documento_Request rdr=((Registrar_Documento_Request) recibido);
 				timestamp=gettimestamp();
 				System.out.println(rdr.getNombreDoc());
-				if (Otros.VerificarFirma.Verificar(rdr.getDocumento(), "D:/git/seguridad/src/cacerts.jce", rdr.getFirmaDoc(),"SHA1withDSA",1024)){
+				if (Otros.VerificarFirma.Verificar(rdr.getDocumento(), "D:/git/seguridad/src/cacerts.jce", rdr.getFirmaDoc(),"SHA1withDSA",1024,"cliente")){
 
-					FirmaRegistrador fr = new FirmaRegistrador(idRegistro++, timestamp, rdr.getDocumento(), rdr.getFirmaDoc());
+
+					ByteArrayOutputStream ops = new ByteArrayOutputStream();
+					byte fr [];
+					ops.write(rdr.getDocumento());
+					ops.write(idRegistro);
+					ops.write(timestamp.getBytes());
+					ops.write(rdr.getFirmaDoc());
+					fr = ops.toByteArray();
+					ops.close();
+
+
 					Fichero doc = new Fichero(rdr.getDocumento(), rdr.getFirmaDoc(), idRegistro, timestamp, 
-							Otros.Firma.Firmar(serialize(fr), "D:/git/seguridad/src/ServidorWeb/servidor.jce","servidor","SHA1withRSA",2048), rdr.getIdPropietario(),false);
-
+							Otros.Firma.Firmar(fr, "D:/git/seguridad/src/ServidorWeb/servidor.jce","servidor","SHA1withRSA",2048), rdr.getIdPropietario(),false);
 					if (rdr.getTipoConfidencialidad().toLowerCase().equals("privado")) {
 						CifradoDescifrado.cifrar(doc);
-						fout = new FileOutputStream("D:/git/seguridad/src/"+idRegistro+rdr.getIdPropietario()+".cif");
+						fout = new FileOutputStream("D:/git/seguridad/src/"+idRegistro+"_"+rdr.getIdPropietario()+".cif");
 					}
 					else{
 						fout = new FileOutputStream("D:/git/seguridad/src/"+idRegistro+"_"+rdr.getIdPropietario()+".sig");
 					}
 					ObjectOutputStream oos = new ObjectOutputStream(fout);
 					oos.writeObject(doc);
-					//					doc.setDocumento(null);//Vaciamos el documento para no llenar la memoria, ya que el documento esta guardado en disco.
-					//					doc.setFirmaDoc(null);
-					//					doc.setFirmaRegistrador(null);
-					BD.put(idRegistro, rdr.getIdPropietario());
+					doc.setDocumento(null);//Dejamos vacio el doc para no ocupar memoria
+					BD.put(idRegistro, doc);
 					System.out.println("////////////////////"+BD.toString());
+
+					Registrar_Documento_Response response = new Registrar_Documento_Response(0, doc.getIdRegistro(), doc.getSelloTemporal(), doc.getFirmaRegistrador());
+					out.writeObject(response);
+
 					fout.close();
 					oos.close();
-					out.close();
+					idRegistro++;
 				}
 				else {
 					System.out.println("No");
 					//Devolver respuesta de error
+					Registrar_Documento_Response response = new Registrar_Documento_Response(1);
+					out.writeObject(response);
 				}
+				out.close();
 			}
 			if (recibido instanceof Recuperar_Documento_Request) {
 				System.out.println("----------------23242342--------------------");
 				System.out.println(BD.toString());
+				Fichero doc;
 				Recuperar_Documento_Request rdr = (Recuperar_Documento_Request) recibido;
 				if (BD.containsKey(rdr.getIdRegistro())) {
-					byte [] ficherobytes = leerfichero.leer("D:/git/seguridad/src/"+Integer.toString(rdr.getIdRegistro())+"_"+rdr.getIdPropietario()+".sig");
-					Fichero fichero;
-					fichero=(Fichero) deserialize(ficherobytes);
-					if (fichero.isPrivado()) {
-						if (BD.get(rdr.getIdRegistro()).equals(rdr.getIdPropietario())){
+					if (BD.get(rdr.getIdRegistro()).isPrivado()) {
+						if (BD.get(rdr.getIdRegistro()).getIdPropietario().equals(rdr.getIdPropietario())){
 							//Desciframos y respondemos con el fichero
+							System.out.println("Vamos a descifrar el documento...");
+							doc = (Fichero) deserialize(Otros.leerfichero.leer("D:/git/seguridad/src/"+rdr.getIdRegistro()+"_"+rdr.getIdPropietario()+".cif"));
+							Recuperar_Documento_Response response = new Recuperar_Documento_Response(0, rdr.getIdRegistro(), BD.get(rdr.getIdRegistro()).getSelloTemporal(),
+									CifradoDescifrado.descifrar(doc.getDocumento(), doc.getParamCifrado()),BD.get(rdr.getIdRegistro()).getFirmaRegistrador());
+							out.writeObject(response);
+							System.out.println("Documento descifrado y enviado al cliente");
 						}
 						else{
 							System.out.println("Acceso no permitido");
 						}				
+					}else{
+						//Respondemos con el fichero de vuelta
+						doc = (Fichero) deserialize(Otros.leerfichero.leer("D:/git/seguridad/src/"+rdr.getIdRegistro()+"_"+rdr.getIdPropietario()+".sig"));
+						Recuperar_Documento_Response response = new Recuperar_Documento_Response(0, rdr.getIdRegistro(), BD.get(rdr.getIdRegistro()).getSelloTemporal(),
+								doc.getDocumento(),BD.get(rdr.getIdRegistro()).getFirmaRegistrador());
+						out.writeObject(response);
+						System.out.println("Documento sin cifrar enviado");
 					}
-					//Respondemos con el fichero de vuelta
-					Recuperar_Documento_Response response = new Recuperar_Documento_Response(0, rdr.getIdRegistro(), fichero.getSelloTemporal(),
-							fichero.getDocumento(),fichero.getFirmaRegistrador());
-					out.writeObject(response);
 				}
 				else{
 					System.out.println("Fichero no encontrado");
 				}
 
-				out.close();
+
 			}
 		} catch (Exception e) {
 			// TODO Auto-generated catch block

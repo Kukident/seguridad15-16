@@ -9,7 +9,7 @@ import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 
 public class VerificarFirma {
-	public static boolean Verificar(byte [] file, String path, byte [] firma, String algoritmo, int longitud_clave) throws Exception{
+	public static boolean Verificar(byte [] file, String path, byte [] firma, String algoritmo, int longitud_clave, String user) throws Exception{
 		String 		provider         = "SunJCE";
 	    //String 		algoritmo        =  "SHA1withDSA";
 	    String 		algoritmo_base   =  "RSA";    
@@ -46,13 +46,13 @@ public class VerificarFirma {
 		
 
 	    // Obtener la clave publica del keystore
-	    PublicKey   publicKey  = ks.getCertificate("cliente").getPublicKey();
+	    PublicKey   publicKey  = ks.getCertificate(user).getPublicKey();
 
 	    System.out.println("*** CLAVE PUBLICA ***");
 	    System.out.println(publicKey);
 		
 	    // Obtener el usuario del Certificado tomado del KeyStrore
-	    byte []   certificadoRaw  = ks.getCertificate("cliente").getEncoded();
+	    byte []   certificadoRaw  = ks.getCertificate(user).getEncoded();
 	    
 	    ByteArrayInputStream inStream = null;
 

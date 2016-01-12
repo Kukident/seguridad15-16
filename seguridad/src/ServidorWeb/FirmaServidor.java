@@ -44,7 +44,7 @@ public class FirmaServidor {
     String 		algoritmo_base   =  "RSA";    
     int    		longitud_clave   =  1024;         
     int    		longbloque;
-    byte   		bloque[]         = new byte[1024];
+    byte   		bloque[]         = new byte[2018];
     long   		filesize         = 0;
     
     // Variables para el KeyStore

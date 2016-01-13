@@ -20,6 +20,7 @@ import java.security.KeyStore;
 import java.security.MessageDigest;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Scanner;
@@ -36,7 +37,6 @@ import Otros.Recuperar_Documento_Response;
 import Otros.Registrar_Documento_Request;
 import Otros.Registrar_Documento_Response;
 import Otros.leerfichero;
-import ServidorWeb.Fichero;
 
 /****************************************************************************
  * This example shows how to set up a key manager to do client
@@ -59,8 +59,7 @@ public class SSLSocketClientWithClientAuth {
 		String 	path 		= null;
 		char[] 	contraseña 		  = "147258".toCharArray();
 		String idPropietario = null;
-		HashMap<Integer, byte []> BD = new HashMap<Integer, byte []>();
-
+		HashMap<Integer, ArrayList> BD = new HashMap<Integer, ArrayList>();
 
 		System.out.println("----------------Hola soy un cliente");
 		definirKeyStores();
@@ -183,7 +182,9 @@ public class SSLSocketClientWithClientAuth {
 					case 1:
 						System.out.println("Registrar Documento");
 						try {
-							Registrar_Documento_Request registrar = new Registrar_Documento_Request(idPropietario, "HUEHUEHUE", "privado", leerfichero.leer(raizMios+"Enviar/imagen.jpg"),raizMios+"Cliente.jce");
+							byte [] fichero = leerfichero.leer(raizMios+"Enviar/imagen.jpg");
+							byte [] firma = Otros.Firma.Firmar(fichero, raizMios+"Cliente.jce","prueba","SHA1withDSA",1024);
+							Registrar_Documento_Request registrar = new Registrar_Documento_Request(idPropietario, "HUEHUEHUE", "privado", fichero,raizMios+"Cliente.jce",firma);
 							out.writeObject(registrar);
 
 							Registrar_Documento_Response recibido = (Registrar_Documento_Response) in.readObject();
@@ -200,11 +201,18 @@ public class SSLSocketClientWithClientAuth {
 								fr = ops.toByteArray();
 								ops.close();
 
+								for (int i = 0; i < registrar.getFirmaDoc().length; i++) {
+									System.out.println(registrar.getFirmaDoc()[i]);
+								}
+								
 								if (Otros.VerificarFirma.Verificar(fr, "D:/git/seguridad/src/cacerts.jce", recibido.getFirmaRegistrador(), "SHA1withRSA",2048,"servidor")) {
 									System.out.println("Documento correctamente registrado");
 									MessageDigest digest = MessageDigest.getInstance("SHA-256");
 									byte[] hash = digest.digest(registrar.getDocumento());
-									BD.put(recibido.getIdRegistro(), hash);
+									ArrayList<byte []> arraylist = new ArrayList<byte []>();
+									arraylist.add(hash);
+									arraylist.add(firma);
+									BD.put(recibido.getIdRegistro(), arraylist);
 									System.out.println(String.format("Hash documento enviado: "+"%064x", new java.math.BigInteger(1, hash)));
 								}
 								else{
@@ -229,37 +237,33 @@ public class SSLSocketClientWithClientAuth {
 
 						ByteArrayOutputStream ops = new ByteArrayOutputStream();
 						byte fr [];
-						byte [] firma = Otros.Firma.Firmar(recibido.getDocumento(), raizMios+"Cliente.jce","prueba","SHA1withDSA",1024);
 						ops.write(recibido.getDocumento());
 						ops.write(recibido.getIdRegistro());
 						ops.write(recibido.getSelloTemporal().getBytes());
-						ops.write(firma);
+						ops.write((byte[]) BD.get(recibido.getIdRegistro()).get(1));
 						fr = ops.toByteArray();
 						ops.close();
+						
 
 						MessageDigest digest = MessageDigest.getInstance("SHA-256");
 						byte[] hash = digest.digest(recibido.getDocumento());
 						System.out.println(String.format("Hash documento recibido: "+"%064x", new java.math.BigInteger(1, hash)));
 
-						if (Arrays.equals(hash, BD.get(recibido.getIdRegistro()))) {
-							//Falta por mover aqui el codigo para guardar el archivo en un fichero
-							System.out.println("Documento recuperado correctamente");
-						}
-						else {
-							System.out.println("Documento alterado por el registrador");
-						}
 
 						if (Otros.VerificarFirma.Verificar(fr, "D:/git/seguridad/src/cacerts.jce", recibido.getFirmaRegistrador(), "SHA1withRSA",2048,"servidor")) {
-							//Faltaria mover aqui dentro el codigo de hash
-
+							if (Arrays.equals(hash, (byte[]) BD.get(recibido.getIdRegistro()).get(0))) {
+								System.out.println("Documento recuperado correctamente");
+								fout = new FileOutputStream("D:/git/seguridad/src/Cliente/Recibir/huehue.jpg");
+								fout.write(recibido.getDocumento());
+								fout.close();
+							}
+							else {
+								System.out.println("Documento alterado por el registrador");
+							}
 						}
 						else{
 							System.out.println("Fallo de firma de registrador");
 						}
-
-						fout = new FileOutputStream("D:/git/seguridad/src/Cliente/Recibir/huehue.jpg");
-						fout.write(recibido.getDocumento());
-						fout.close();
 						break;
 
 					case 3:
@@ -283,32 +287,6 @@ public class SSLSocketClientWithClientAuth {
 					entrada.nextLine();
 				}
 			}
-
-
-			/*PrintWriter out = new PrintWriter(
-					new BufferedWriter(
-							new OutputStreamWriter(
-									socket.getOutputStream())));
-			out.println("GET " + "/" + path + " HTTP/1.0");
-			out.println();
-			out.flush();
-
-			/*
-			 * Make sure there were no surprises
-			 */
-			/*	if (out.checkError())
-				System.out.println(
-						"SSLSocketClient: java.io.PrintWriter error");
-
-			/* read response */
-			/*BufferedReader in = new BufferedReader(
-					new InputStreamReader(
-							socket.getInputStream()));
-
-			String inputLine;
-
-			while ((inputLine = in.readLine()) != null)
-				System.out.println(inputLine);*/
 
 			in.close();
 			out.close();

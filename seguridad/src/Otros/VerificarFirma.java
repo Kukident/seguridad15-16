@@ -77,6 +77,7 @@ public class VerificarFirma {
 		
 		System.out.println();
 		fmensajeV.close();
+		inStream.close();
 		if (resultado == true){
 		    System.out.print("Firma CORRECTA");
 			return true;

@@ -111,7 +111,7 @@ public abstract class ClassServer implements Runnable {
 						Fichero doc = new Fichero(rdr.getDocumento(), rdr.getFirmaDoc(), idRegistro, timestamp, 
 								Otros.Firma.Firmar(fr, "D:/git/seguridad/src/ServidorWeb/servidor.jce","servidor","SHA1withRSA",2048), rdr.getIdPropietario(),false);
 						if (rdr.getTipoConfidencialidad().toLowerCase().equals("privado")) {
-							CifradoDescifrado.cifrar(doc);
+							CifradoDescifrado.cifrar(doc,"arcfour");
 							fout = new FileOutputStream("D:/git/seguridad/src/"+idRegistro+"_"+rdr.getIdPropietario()+".cif");
 						}
 						else{
@@ -151,7 +151,7 @@ public abstract class ClassServer implements Runnable {
 								System.out.println("Vamos a descifrar el documento...");
 								doc = (Fichero) deserialize(Otros.leerfichero.leer("D:/git/seguridad/src/"+rdr.getIdRegistro()+"_"+rdr.getIdPropietario()+".cif"));
 								Recuperar_Documento_Response response = new Recuperar_Documento_Response(0, rdr.getIdRegistro(), BD.get(rdr.getIdRegistro()).getSelloTemporal(),
-										CifradoDescifrado.descifrar(doc.getDocumento(), doc.getParamCifrado()),BD.get(rdr.getIdRegistro()).getFirmaRegistrador());
+										CifradoDescifrado.descifrar(doc.getDocumento(), doc.getParamCifrado(),"arcfour"),BD.get(rdr.getIdRegistro()).getFirmaRegistrador());
 								out.writeObject(response);
 								System.out.println("Documento descifrado y enviado al cliente");
 							}
@@ -205,69 +205,6 @@ public abstract class ClassServer implements Runnable {
 		}		
 	}
 
-	// Crea dos canales de salida, sobre el socket
-	//		- uno binario  (rawOut)
-	//		- uno de texto (out)
-
-	/*OutputStream rawOut = socket.getOutputStream();
-
-		    PrintWriter out = new PrintWriter(
-										new BufferedWriter(
-											new OutputStreamWriter(rawOut)));		    
-		    try {
-				// Obtener path to class file from header
-
-		    	BufferedReader in =
-				    new BufferedReader(
-					new InputStreamReader(socket.getInputStream()));
-
-				String path = obtenerPath(in);
-
-				// Recuperar bytecodes
-
-				byte[] bytecodes = getBytes(path);
-
-
-				// send bytecodes in response (assumes HTTP/1.0 or later)
-
-				try 
-				{
-				    out.print("HTTP/1.0 200 OK\r\n");
-				    out.print("Content-Length: " + bytecodes.length +
-						   "\r\n");
-				    out.print("Content-Type: text/html\r\n\r\n");
-				    out.flush();
-
-				    rawOut.write(bytecodes);
-				    rawOut.flush();
-				} 
-				catch (IOException ie) {
-				    ie.printStackTrace();
-				    return;
-				}
-
-		    } 
-		    catch (Exception e) {
-				e.printStackTrace();
-				// write out error response
-				out.println("HTTP/1.0 400 " + e.getMessage() + "\r\n");
-				out.println("Content-Type: text/html\r\n\r\n");
-				out.flush();
-		    }
-
-		} catch (IOException ex) {
-		    // eat exception (could log error to log file, but
-		    // write out to stdout for now).
-		    System.out.println("error writing response: " + ex.getMessage());
-		    ex.printStackTrace();
-
-			 } finally {
-				 try {
-					 socket.close();
-				 } catch (IOException e) {
-				 }
-			 }
-	}
 
 	/********************************************************
 	 * newListener()
@@ -284,35 +221,6 @@ public abstract class ClassServer implements Runnable {
 	 * 			parsing the HTML header.
 	 * @return 
 	 *******************************************************/
-	/*  private static String obtenerPath(BufferedReader in) throws IOException
-      {
-    		String line = in.readLine();
-    		String path = "";
-
-		    System.out.println ("*******" + line);
-
-    		// extract class from GET line
-    		if (line.startsWith("GET /")) {
-    		    line = line.substring(5, line.length()-1).trim();
-    		    int index = line.indexOf(' ');
-    		    if (index != -1) {
-    			path = line.substring(0, index);
-    		    }
-    		}
-
-    		// eat the rest of header
-    		do {
-    		    line = in.readLine();
-    		    System.out.println (line);
-    		} while ((line.length() != 0) &&
-    			 (line.charAt(0) != '\r') && (line.charAt(0) != '\n'));
-
-    		if (path.length() != 0) {
-    		    return path;
-    		} else {
-    		    throw new IOException("Cabecera incorrecta");
-    		}
-    }*/
 
 	private String gettimestamp(){
 		Date timestamp = new Date();

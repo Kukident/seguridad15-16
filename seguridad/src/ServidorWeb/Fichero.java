@@ -11,6 +11,7 @@ public class Fichero implements Serializable{
 	private byte [] paramCifrado;
 	private String idPropietario;
 	private boolean privado;
+	private String nombreDoc;
 	
 	public Fichero(byte[] documento, byte[] firmaDoc, int idRegistro, String selloTemporal, byte[] firmaRegistrador, String idPropietario, boolean privado) {
 		this.documento = documento;
@@ -84,6 +85,14 @@ public class Fichero implements Serializable{
 
 	public void setPrivado(boolean privado) {
 		this.privado = privado;
+	}
+
+	public String getNombreDoc() {
+		return nombreDoc;
+	}
+
+	public void setNombreDoc(String nombreDoc) {
+		this.nombreDoc = nombreDoc;
 	}
 	
 	

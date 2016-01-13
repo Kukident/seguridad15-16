@@ -20,6 +20,7 @@ import java.security.KeyStore;
 import java.security.MessageDigest;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Scanner;
 
@@ -28,6 +29,8 @@ import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLSocket;
 import javax.net.ssl.SSLSocketFactory;
 
+import Otros.Listar_Documentos_Request;
+import Otros.Listar_Documentos_Response;
 import Otros.Recuperar_Documento_Request;
 import Otros.Recuperar_Documento_Response;
 import Otros.Registrar_Documento_Request;
@@ -202,6 +205,7 @@ public class SSLSocketClientWithClientAuth {
 									MessageDigest digest = MessageDigest.getInstance("SHA-256");
 									byte[] hash = digest.digest(registrar.getDocumento());
 									BD.put(recibido.getIdRegistro(), hash);
+									System.out.println(String.format("Hash documento enviado: "+"%064x", new java.math.BigInteger(1, hash)));
 								}
 								else{
 									System.out.println("Firma registrador incorrecta");
@@ -217,20 +221,54 @@ public class SSLSocketClientWithClientAuth {
 
 					case 2:
 						System.out.println("Recuperar Documento");
-						Recuperar_Documento_Request recuperar = new Recuperar_Documento_Request(idPropietario, 1);
+						Recuperar_Documento_Request recuperar = new Recuperar_Documento_Request(idPropietario, 0);
 						out.writeObject(recuperar);
 						Recuperar_Documento_Response recibido =  (Recuperar_Documento_Response) in.readObject();
 						System.out.println("Leyendo objeto recibido   "+recibido.getSelloTemporal());
 
-						/*FirmaRegistrador fr = new FirmaRegistrador(recibido.getIdRegistro(), recibido.getSelloTemporal(), recibido.getDocumento(), Firma.Firmar(recibido.getDocumento(), raizMios+"Cliente.jce", "prueba","SHA1withDSA",1024));
-						if (Otros.VerificarFirma.Verificar(ClassServer.serialize(fr), "D:/git/seguridad/src/cacerts.jce", recibido.getFirmaRegistrador(), "SHA1withRSA",2048)) {
-							System.out.println("-------------Firma Correcta");
+
+						ByteArrayOutputStream ops = new ByteArrayOutputStream();
+						byte fr [];
+						byte [] firma = Otros.Firma.Firmar(recibido.getDocumento(), raizMios+"Cliente.jce","prueba","SHA1withDSA",1024);
+						ops.write(recibido.getDocumento());
+						ops.write(recibido.getIdRegistro());
+						ops.write(recibido.getSelloTemporal().getBytes());
+						ops.write(firma);
+						fr = ops.toByteArray();
+						ops.close();
+
+						MessageDigest digest = MessageDigest.getInstance("SHA-256");
+						byte[] hash = digest.digest(recibido.getDocumento());
+						System.out.println(String.format("Hash documento recibido: "+"%064x", new java.math.BigInteger(1, hash)));
+
+						if (Arrays.equals(hash, BD.get(recibido.getIdRegistro()))) {
+							//Falta por mover aqui el codigo para guardar el archivo en un fichero
+							System.out.println("Documento recuperado correctamente");
+						}
+						else {
+							System.out.println("Documento alterado por el registrador");
+						}
+
+						if (Otros.VerificarFirma.Verificar(fr, "D:/git/seguridad/src/cacerts.jce", recibido.getFirmaRegistrador(), "SHA1withRSA",2048,"servidor")) {
+							//Faltaria mover aqui dentro el codigo de hash
+
 						}
 						else{
-							System.out.println("*********Ups");
-						}*/
+							System.out.println("Fallo de firma de registrador");
+						}
+
 						fout = new FileOutputStream("D:/git/seguridad/src/Cliente/Recibir/huehue.jpg");
 						fout.write(recibido.getDocumento());
+						fout.close();
+						break;
+
+					case 3:
+						System.out.println("Listar Documentos");
+						Listar_Documentos_Request listar = new Listar_Documentos_Request(idPropietario);
+						out.writeObject(listar);
+						Listar_Documentos_Response recibido1 = (Listar_Documentos_Response) in.readObject();
+						System.out.println("Publicos: "+recibido1.getListaDocPublicos().values());
+						System.out.println("Privados: "+recibido1.getListaDocPrivados().values());
 						break;
 
 					default:
@@ -238,8 +276,8 @@ public class SSLSocketClientWithClientAuth {
 						System.exit(1);
 						break;
 					}
-					entrada.close(); //Cerramos flujo de entrada
-					correcto=true;// y salimos del while de seleccion
+					//entrada.close(); //Cerramos flujo de entrada
+					//correcto=true;// y salimos del while de seleccion
 				}
 				else{
 					entrada.nextLine();

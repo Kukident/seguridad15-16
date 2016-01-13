@@ -48,42 +48,43 @@ import Otros.leerfichero;
  *
  ****************************************************************************/
 
-public class SSLSocketClientWithClientAuth {
+public class Cliente {
 
-	private static String 	raizMios ="D:/git/seguridad/src/Cliente/";
+	private static String 	raizCliente ="D:/git/seguridad/raizCliente/";
+	private static String	keyStoreFile;
+	private static String	contraseñaKeystore;
+	private static String	truststoreFile;
+	private static String	contraseñaTruststore;
 
 	public static void main(String[] args) throws Exception {
 
-		String 	host 		= null;
-		int 	port 		= -1;
-		String 	path 		= null;
-		char[] 	contraseña 		  = "147258".toCharArray();
+		String 	host 		= "127.0.0.1";
+		int 	port 		= 9001;
 		String idPropietario = null;
 		HashMap<Integer, ArrayList> BD = new HashMap<Integer, ArrayList>();
 
 		System.out.println("----------------Hola soy un cliente");
-		definirKeyStores();
 
-		for (int i = 0; i < args.length; i++)
-			System.out.println(args[i]);
-
-		if (args.length < 3) {
+		if (args.length < 4) {
 			System.out.println(
-					"USAGE: java SSLSocketClientWithClientAuth " +
-					"host port requestedfilepath");
+					"USAGE: java Cliente " +
+					"keyStoreFile contraseñaKeystore truststoreFile contraseñaTruststore");
 			System.exit(-1);
 		}
 
 		try {
-			host = args[0];
-			port = Integer.parseInt(args[1]);
-			path = args[2];
+			keyStoreFile = args[0];
+			contraseñaKeystore = args[1];
+			truststoreFile = args[2];
+			contraseñaTruststore = args[3];
 		} catch (IllegalArgumentException e) {
 			System.out.println("USAGE: java SSLSocketClientWithClientAuth " +
-					"host port requestedfilepath");
+					"keyStoreFile contraseñaKeystore truststoreFile contraseñaTruststore");
 			System.exit(-1);
 		}
 
+		definirKeyStores();
+		
 		try {
 
 			/*****************************************************************************
@@ -100,9 +101,9 @@ public class SSLSocketClientWithClientAuth {
 				kmf = KeyManagerFactory.getInstance("SunX509");
 				ks = KeyStore.getInstance("JCEKS");
 
-				ks.load(new FileInputStream(raizMios + "cliente.jce"), contraseña);
+				ks.load(new FileInputStream(raizCliente + keyStoreFile), contraseñaKeystore.toCharArray());
 
-				kmf.init(ks, contraseña);
+				kmf.init(ks, contraseñaKeystore.toCharArray());
 
 				ctx.init(kmf.getKeyManagers(), null, null);
 
@@ -182,9 +183,9 @@ public class SSLSocketClientWithClientAuth {
 					case 1:
 						System.out.println("Registrar Documento");
 						try {
-							byte [] fichero = leerfichero.leer(raizMios+"Enviar/imagen.jpg");
-							byte [] firma = Otros.Firma.Firmar(fichero, raizMios+"Cliente.jce","prueba","SHA1withDSA",1024);
-							Registrar_Documento_Request registrar = new Registrar_Documento_Request(idPropietario, "HUEHUEHUE", "privado", fichero,raizMios+"Cliente.jce",firma);
+							byte [] fichero = leerfichero.leer(raizCliente+"Enviar/imagen.jpg");
+							byte [] firma = Otros.Firma.Firmar(fichero, raizCliente+keyStoreFile,"prueba","SHA1withDSA",1024);
+							Registrar_Documento_Request registrar = new Registrar_Documento_Request(idPropietario, "HUEHUEHUE", "publico", fichero,raizCliente+keyStoreFile,firma);
 							out.writeObject(registrar);
 
 							Registrar_Documento_Response recibido = (Registrar_Documento_Response) in.readObject();
@@ -205,7 +206,7 @@ public class SSLSocketClientWithClientAuth {
 									System.out.println(registrar.getFirmaDoc()[i]);
 								}
 								
-								if (Otros.VerificarFirma.Verificar(fr, "D:/git/seguridad/src/cacerts.jce", recibido.getFirmaRegistrador(), "SHA1withRSA",2048,"servidor")) {
+								if (Otros.VerificarFirma.Verificar(fr, raizCliente+truststoreFile, recibido.getFirmaRegistrador(), "SHA1withRSA",2048,"servidor")) {
 									System.out.println("Documento correctamente registrado");
 									MessageDigest digest = MessageDigest.getInstance("SHA-256");
 									byte[] hash = digest.digest(registrar.getDocumento());
@@ -250,10 +251,10 @@ public class SSLSocketClientWithClientAuth {
 						System.out.println(String.format("Hash documento recibido: "+"%064x", new java.math.BigInteger(1, hash)));
 
 
-						if (Otros.VerificarFirma.Verificar(fr, "D:/git/seguridad/src/cacerts.jce", recibido.getFirmaRegistrador(), "SHA1withRSA",2048,"servidor")) {
+						if (Otros.VerificarFirma.Verificar(fr, raizCliente+truststoreFile, recibido.getFirmaRegistrador(), "SHA1withRSA",2048,"servidor")) {
 							if (Arrays.equals(hash, (byte[]) BD.get(recibido.getIdRegistro()).get(0))) {
 								System.out.println("Documento recuperado correctamente");
-								fout = new FileOutputStream("D:/git/seguridad/src/Cliente/Recibir/huehue.jpg");
+								fout = new FileOutputStream(raizCliente+"Recibir/huehue.jpg");
 								fout.write(recibido.getDocumento());
 								fout.close();
 							}
@@ -305,15 +306,15 @@ public class SSLSocketClientWithClientAuth {
 	{
 		// Almacen de claves
 
-		System.setProperty("javax.net.ssl.keyStore",         raizMios + "cliente.jce");
+		System.setProperty("javax.net.ssl.keyStore",         raizCliente + "cliente.jce");
 		System.setProperty("javax.net.ssl.keyStoreType",     "JCEKS");
-		System.setProperty("javax.net.ssl.keyStorePassword", "147258");
+		System.setProperty("javax.net.ssl.keyStorePassword", contraseñaKeystore);
 		System.out.println("si");
 		// Almacen de confianza
 
-		System.setProperty("javax.net.ssl.trustStore",          "D:/git/seguridad/src/" + "cacerts.jce");
+		System.setProperty("javax.net.ssl.trustStore",          raizCliente + truststoreFile);
 		System.setProperty("javax.net.ssl.trustStoreType",     "JCEKS");
-		System.setProperty("javax.net.ssl.trustStorePassword", "147258");
+		System.setProperty("javax.net.ssl.trustStorePassword", contraseñaTruststore);
 
 	}
 

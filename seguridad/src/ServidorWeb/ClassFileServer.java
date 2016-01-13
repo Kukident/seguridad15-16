@@ -20,116 +20,51 @@ import javax.security.cert.X509Certificate;
 
 public class ClassFileServer extends ClassServer {
 
-    private String     		docroot;
-    private static int 		DefaultServerPort = 9001;
-	private static String 	raiz = "D:/git/seguridad/src/ServidorWeb/";
-
-	//	ks.load(new FileInputStream("c:/comun/escuela/seguridad_bolonia/practica2013/cliente/testkeys.jks"), passphrase);
-
-    /**********************************************************
-     * Constructs a ClassFileServer.
-     *
-     * @param path the path where the server locates files
-     **********************************************************/
-    public ClassFileServer(ServerSocket ss, String docroot) throws IOException
-    {
+    protected ClassFileServer(ServerSocket ss) {
 		super(ss);
-		this.docroot = docroot;
-    }
+		// TODO Auto-generated constructor stub
+	}
 
-    /**********************************************************
-    * getBytes -- Retorna un array de bytes con el contenido del fichero. 
-    *    representado por el argumento <b>path</b>.
-    *
-    *  @return the bytes for the file
-    *  @exception FileNotFoundException si el fichero 
-    *      <b>path</b> no existe
-    *********************************************************/
-    public byte[] getBytes(String path)  
-    	                throws IOException, FileNotFoundException     {
+    private static int 		port = 9001;
+	private static String 	raizServidor = "D:/git/seguridad/raizServidor/";
+	private static String	keyStoreFile;
+	private static String	contraseñaKeystore;
+	private static String	truststoreFile;
+	private static String	contraseñaTruststore;
 
-	    String fichero = docroot + File.separator + path;
 
-	    File f = new File(fichero);
-		int length = (int)(f.length());
-
-		System.out.println("leyendo: " + fichero);
-		
-		if (length == 0) {
-		    throw new IOException("La longitud del fichero es cero: " + path);
-		} 
-		else 
-		{
-		    FileInputStream fin = new FileInputStream(f);
-		    DataInputStream in  = new DataInputStream(fin);
-	
-		    byte[] bytecodes = new byte[length];
-	
-		    in.readFully(bytecodes);
-		    return bytecodes;
-		}
-    }
-
-    /** Main *********************************************
-     * Main method to create the class server that reads
-     * files. This takes two command line arguments, the
-     * port on which the server accepts requests and the
-     * root of the path. To start up the server: <
-     *
-     *   java ClassFileServer <port> <path>
-     * 
-     *
-     * <code>   new ClassFileServer(port, docroot);
-     * </code>
-     *****************************************************/
     public static void main(String args[])
     {
     	System.out.println("+++++++++++++++++++++Hola soy un servidor");
     	
 		System.out.println(
-		    "USAGE: java ClassFileServer port docroot [TLS [true]]");
-		System.out.println("");
-		System.out.println(
-		    "If the third argument is TLS, it will start as\n" +
-		    "a TLS/SSL file server, otherwise, it will be\n"   +
-		    "an ordinary file server. \n"                      +
-		    "If the fourth argument is true,it will require\n" +
-		    "client authentication as well.");
+		    "USAGE: java Registrador keyStoreFile contraseñaKeystore truststoreFile contraseñaTruststore algoritmoCifrado");
 	
-		definirKeyStores();
-	
-		int port = DefaultServerPort;
-		String docroot = "";
-	
-		if (args.length >= 1) {
-		    port = Integer.parseInt(args[0]);
-		}
-	
-		if (args.length >= 2) {
-		    docroot = args[1];
+		try {
+			keyStoreFile = args[0];
+			contraseñaKeystore = args[1];
+			truststoreFile = args[2];
+			contraseñaTruststore = args[3];
+		} catch (IllegalArgumentException e) {
+			System.out.println("USAGE: java SSLSocketClientWithClientAuth " +
+					"keyStoreFile contraseñaKeystore truststoreFile contraseñaTruststore");
+			System.exit(-1);
 		}
 		
-		String type = "PlainSocket";
-		if (args.length >= 3) {
-		    type = args[2];
-		}
+		definirKeyStores();
+	
+
 	
 		try {
 		    ServerSocketFactory ssf =
-		    		ClassFileServer.getServerSocketFactory(type);
+		    		ClassFileServer.getServerSocketFactory("TLS");
 	
 		    ServerSocket ss = ssf.createServerSocket(port);
-	
+		    ((SSLServerSocket)ss).setNeedClientAuth(true);
 		    /*for (int j = 0; j < ((SSLServerSocket)ss).getEnabledCipherSuites().length; j++) {
 	        	   System.out.println(((SSLServerSocket)ss).getEnabledCipherSuites()[j].toString());}*/
-		    
-		    if (args.length >= 4 && 
-		    	args[3].equals("true")) {
-	
-		    	((SSLServerSocket)ss).setNeedClientAuth(true);
-		    }
 		
-		    new ClassFileServer(ss, docroot);
+		    new ClassFileServer(ss);
 		
 		} catch (IOException e) {
 		    System.out.println("Unable to start ClassServer: " +
@@ -154,16 +89,15 @@ public class ClassFileServer extends ClassServer {
     		SSLContext 			ctx;
 			KeyManagerFactory 	kmf;
 			KeyStore 			ks;
-			char[] 				contraseña = "147258".toCharArray();
 	
 			ctx = SSLContext.getInstance("TLS");
 			kmf = KeyManagerFactory.getInstance("SunX509");
 
 			ks  = KeyStore.getInstance("JCEKS");
-			ks.load(new FileInputStream(raiz + "servidor.jce"), contraseña);
+			ks.load(new FileInputStream(raizServidor + keyStoreFile), contraseñaKeystore.toCharArray());
 			
 
-			kmf.init(ks, contraseña);
+			kmf.init(ks, contraseñaKeystore.toCharArray());
 			
 			ctx.init(kmf.getKeyManagers(), null, null);
 	
@@ -192,14 +126,14 @@ public class ClassFileServer extends ClassServer {
 	private static void definirKeyStores()
 	{
 		// Almacen de claves
-		System.setProperty("javax.net.ssl.keyStore",         raiz + "servidor.jce");
+		System.setProperty("javax.net.ssl.keyStore",         raizServidor + keyStoreFile);
 		System.setProperty("javax.net.ssl.keyStoreType",     "JCEKS");
-	    System.setProperty("javax.net.ssl.keyStorePassword", "147258");
+	    System.setProperty("javax.net.ssl.keyStorePassword", contraseñaKeystore);
 	    // Almacen de confianza
 	    
-	    System.setProperty("javax.net.ssl.trustStore",          "D:/git/seguridad/src/" + "cacerts.jce");
+	    System.setProperty("javax.net.ssl.trustStore",          raizServidor + truststoreFile);
 		System.setProperty("javax.net.ssl.trustStoreType",     "JCEKS");
-	    System.setProperty("javax.net.ssl.trustStorePassword", "147258");
+	    System.setProperty("javax.net.ssl.trustStorePassword", contraseñaTruststore);
 	}
 }
 

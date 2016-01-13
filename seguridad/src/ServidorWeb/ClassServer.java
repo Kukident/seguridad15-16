@@ -44,19 +44,6 @@ public abstract class ClassServer implements Runnable {
 		newListener();
 	}
 
-	/****************************************************************
-	 * getBytes -- Returns an array of bytes containing the bytes for
-	 * the file represented by the argument <b>path</b>.
-	 *
-	 * @return the bytes for the file
-	 * @exception FileNotFoundException if the file corresponding
-	 * to <b>path</b> could not be loaded.
-	 * @exception IOException if error occurs reading the class
-	 ***************************************************************/
-	public abstract 
-	byte[] getBytes(String path)
-			throws IOException, FileNotFoundException;
-
 	/***************************************************************
 	 * run() -- The "listen" thread that accepts a connection to the
 	 * server, parses the header to obtain the file name

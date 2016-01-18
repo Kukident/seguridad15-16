@@ -30,7 +30,15 @@ import Otros.Registrar_Documento_Response;
 public abstract class ClassServer implements Runnable {
 
 	private ServerSocket server = null;
+	private String algoritmoCifrado = null;
+	private String path = null;
+	private String keyStoreFile = null;
+	private String contraseñaKeystore = null;
+	private String truststoreFile=null;
+	private String contraseñaTruststore=null;
 	private int idRegistro=0;
+	private String ksentry="servidor";
+	private String ksentrypass="147258";
 	private static HashMap<Integer, Fichero> BD = new HashMap<Integer, Fichero>();
 
 	/**
@@ -38,9 +46,16 @@ public abstract class ClassServer implements Runnable {
 	 * obtains a file's bytecodes using the method <b>getBytes</b>.
 	 *
 	 */
-	protected ClassServer(ServerSocket ss)
+	protected ClassServer(ServerSocket ss, String algoritmoCifrado, String path,
+			String keyStoreFile, String contraseñaKeystore,String truststoreFile,String contraseñaTruststore)
 	{
 		server = ss;
+		this.algoritmoCifrado=algoritmoCifrado;
+		this.path=path;
+		this.keyStoreFile=keyStoreFile;
+		this.contraseñaKeystore=contraseñaKeystore;
+		this.truststoreFile=truststoreFile;
+		this.contraseñaTruststore=contraseñaTruststore;
 		newListener();
 	}
 
@@ -82,7 +97,7 @@ public abstract class ClassServer implements Runnable {
 					Registrar_Documento_Request rdr=((Registrar_Documento_Request) recibido);
 					timestamp=gettimestamp();
 					System.out.println(rdr.getNombreDoc());
-					if (Otros.VerificarFirma.Verificar(rdr.getDocumento(), "D:/git/seguridad/src/cacerts.jce", rdr.getFirmaDoc(),"SHA1withDSA",1024,"cliente")){
+					if (Otros.VerificarFirma.Verificar(rdr.getDocumento(), path+truststoreFile,contraseñaTruststore, rdr.getFirmaDoc(),"SHA1withDSA",1024,rdr.getIdPropietario())){
 
 
 						ByteArrayOutputStream ops = new ByteArrayOutputStream();
@@ -96,17 +111,17 @@ public abstract class ClassServer implements Runnable {
 
 
 						Fichero doc = new Fichero(rdr.getDocumento(), rdr.getFirmaDoc(), idRegistro, timestamp, 
-								Otros.Firma.Firmar(fr, "D:/git/seguridad/src/ServidorWeb/servidor.jce","servidor","SHA1withRSA",2048), rdr.getIdPropietario(),false);
+								Otros.Firma.Firmar(fr, path+keyStoreFile,contraseñaKeystore,ksentry,ksentrypass,"SHA1withRSA",2048), rdr.getIdPropietario(),false);
 						if (rdr.getTipoConfidencialidad().toLowerCase().equals("privado")) {
-							CifradoDescifrado.cifrar(doc,"arcfour");
-							fout = new FileOutputStream("D:/git/seguridad/src/"+idRegistro+"_"+rdr.getIdPropietario()+".cif");
+							CifradoDescifrado.cifrar(doc,algoritmoCifrado);
+							fout = new FileOutputStream(path+idRegistro+"_"+rdr.getIdPropietario()+".cif");
 						}
 						else{
-							fout = new FileOutputStream("D:/git/seguridad/src/"+idRegistro+"_"+rdr.getIdPropietario()+".sig");
+							fout = new FileOutputStream(path+idRegistro+"_"+rdr.getIdPropietario()+".sig");
 						}
 						ObjectOutputStream oos = new ObjectOutputStream(fout);
 						oos.writeObject(doc);
-						doc.setDocumento(null);//Dejamos vacio el doc para no ocupar memoria
+						doc.setDocumento(null);//Dejamos vacio el doc para no ocupar memoria??
 						doc.setNombreDoc(rdr.getNombreDoc());
 						BD.put(idRegistro, doc);
 						System.out.println("////////////////////"+BD.toString());
@@ -127,7 +142,6 @@ public abstract class ClassServer implements Runnable {
 					//out.close();
 				}
 				if (recibido instanceof Recuperar_Documento_Request) {
-					System.out.println("----------------23242342--------------------");
 					System.out.println(BD.toString());
 					Fichero doc;
 					Recuperar_Documento_Request rdr = (Recuperar_Documento_Request) recibido;
@@ -136,9 +150,9 @@ public abstract class ClassServer implements Runnable {
 							if (BD.get(rdr.getIdRegistro()).getIdPropietario().equals(rdr.getIdPropietario())){
 								//Desciframos y respondemos con el fichero
 								System.out.println("Vamos a descifrar el documento...");
-								doc = (Fichero) deserialize(Otros.leerfichero.leer("D:/git/seguridad/src/"+rdr.getIdRegistro()+"_"+rdr.getIdPropietario()+".cif"));
+								doc = (Fichero) deserialize(Otros.leerfichero.leer(path+rdr.getIdRegistro()+"_"+rdr.getIdPropietario()+".cif"));
 								Recuperar_Documento_Response response = new Recuperar_Documento_Response(0, rdr.getIdRegistro(), BD.get(rdr.getIdRegistro()).getSelloTemporal(),
-										CifradoDescifrado.descifrar(doc.getDocumento(), doc.getParamCifrado(),"arcfour"),BD.get(rdr.getIdRegistro()).getFirmaRegistrador());
+										CifradoDescifrado.descifrar(doc.getDocumento(), doc.getParamCifrado(),algoritmoCifrado),BD.get(rdr.getIdRegistro()).getFirmaRegistrador());
 								out.writeObject(response);
 								System.out.println("Documento descifrado y enviado al cliente");
 							}
@@ -147,7 +161,7 @@ public abstract class ClassServer implements Runnable {
 							}				
 						}else{
 							//Respondemos con el fichero de vuelta
-							doc = (Fichero) deserialize(Otros.leerfichero.leer("D:/git/seguridad/src/"+rdr.getIdRegistro()+"_"+rdr.getIdPropietario()+".sig"));
+							doc = (Fichero) deserialize(Otros.leerfichero.leer(path+rdr.getIdRegistro()+"_"+rdr.getIdPropietario()+".sig"));
 							Recuperar_Documento_Response response = new Recuperar_Documento_Response(0, rdr.getIdRegistro(), BD.get(rdr.getIdRegistro()).getSelloTemporal(),
 									doc.getDocumento(),BD.get(rdr.getIdRegistro()).getFirmaRegistrador());
 							out.writeObject(response);

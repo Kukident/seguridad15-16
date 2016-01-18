@@ -5,15 +5,13 @@ import java.io.FileInputStream;
 import java.security.KeyStore;
 import java.security.PublicKey;
 import java.security.Signature;
+import java.security.cert.Certificate;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
+import java.util.Enumeration;
 
 public class VerificarFirma {
-	public static boolean Verificar(byte [] file, String path, byte [] firma, String algoritmo, int longitud_clave, String user) throws Exception{
-		String 		provider         = "SunJCE";
-	    //String 		algoritmo        =  "SHA1withDSA";
-	    String 		algoritmo_base   =  "RSA";    
-	    //int    		longitud_clave   =  1024;         
+	public static boolean Verificar(byte [] file, String path,String pass, byte [] firma, String algoritmo, int longitud_clave, String user) throws Exception{       
 	    int    		longbloque;
 	    byte   		bloque[]         = new byte[longitud_clave];
 	    long   		filesize         = 0;
@@ -21,8 +19,7 @@ public class VerificarFirma {
 	    // Variables para el KeyStore
 
 		KeyStore    ks;
-		char[]      ks_password  	= "147258".toCharArray();
-		char[]      key_password 	= "147258".toCharArray();
+		char[]      ks_password  	= pass.toCharArray();
 		String		ks_file			= path;	 
 		
 		
@@ -44,6 +41,31 @@ public class VerificarFirma {
 		// Creamos un objeto para verificar
 		Signature verifier=Signature.getInstance(algoritmo);	
 		
+		//////Conseguimos el alias de la entrada del keystore mediante el idPropietario
+		 Enumeration enumeration = ks.aliases();
+	        while(enumeration.hasMoreElements()) {
+	            String alias = (String)enumeration.nextElement();
+	            System.out.println("alias name: " + alias);
+	            byte[] certificado = ks.getCertificate(alias).getEncoded();
+	            
+	            ByteArrayInputStream inStream = null;
+
+				inStream = new ByteArrayInputStream(certificado);
+				CertificateFactory cf = CertificateFactory.getInstance("X.509");
+				X509Certificate cert1 = (X509Certificate)cf.generateCertificate(inStream);
+//			    System.out.println ("Certificado: " +
+//						"\n -- Algoritmo Firma  = " + cert1.getSigAlgName() +
+//						"\n -- Usuario =" + cert1.getIssuerX500Principal() +
+//						"\n -- Parametros Algoritmo =" + cert1.getSigAlgParams() +
+//						"\n --  Algoritmo =" + cert1.getPublicKey().getAlgorithm() +
+//						"\n --  Codificacion =" + cert1.getPublicKey().getEncoded()					
+//		    		);       
+
+				//System.out.println("Longitud_clave: "+cert1.alg);
+				if (user.equals(cert1.getSubjectX500Principal().toString())){
+					user=alias;
+				}
+	        }
 
 	    // Obtener la clave publica del keystore
 	    PublicKey   publicKey  = ks.getCertificate(user).getPublicKey();

@@ -39,7 +39,7 @@ public class CifradoDescifrado {
 		ks.load(new FileInputStream(ks_file),  ks_password); 
 
 		if (algoritmo.equals("arcfour")){
-			System.out.println("Metodo de cifrado rc4");
+			System.out.println("Metodo de cifrado RC4");
 			KeyStore.SecretKeyEntry pkEntry = (KeyStore.SecretKeyEntry)
 					ks.getEntry("rc4", new KeyStore.PasswordProtection(key_password));
 
@@ -64,6 +64,8 @@ public class CifradoDescifrado {
 
 
 		if (algoritmo.equals("aes")){
+			System.out.println("Metodo de cifrado AES");
+
 			KeyStore.SecretKeyEntry pkEntry = (KeyStore.SecretKeyEntry)
 					ks.getEntry("aes", new KeyStore.PasswordProtection(key_password));
 

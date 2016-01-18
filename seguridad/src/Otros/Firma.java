@@ -4,15 +4,19 @@ import java.io.FileInputStream;
 import java.security.KeyStore;
 import java.security.PrivateKey;
 import java.security.Signature;
+import java.security.cert.Certificate;
+import java.security.cert.CertificateFactory;
+import java.security.cert.X509Certificate;
+import java.util.Enumeration;
 
 public class Firma {
 
-	public static byte [] Firmar(byte [] file, String path, String ksentry, String algoritmo, int longitud_clave) throws Exception{
+	public static byte [] Firmar(byte [] file, String path, String pass, String ksentry, String entrypass, String algoritmo, int longitud_clave) throws Exception{
 		ByteArrayInputStream fmensaje   = new    ByteArrayInputStream(file);      
 
-		String 		provider         = "SunJCE";
+		//String 		provider         = "SunJCE";
 		//String 		algoritmo        =  "SHA1withDSA";
-		String 		algoritmo_base   =  "RSA";    
+		//String 		algoritmo_base   =  "RSA";    
 		//int    		longitud_clave   =  1024;         
 		int    		longbloque;
 		byte   		bloque[]         = new byte[longitud_clave];
@@ -21,8 +25,8 @@ public class Firma {
 		// Variables para el KeyStore
 
 		KeyStore    ks;
-		char[]      ks_password  	= "147258".toCharArray();
-		char[]      key_password 	= "147258".toCharArray();
+		char[]      ks_password  	= pass.toCharArray();
+		char[]      key_password 	= entrypass.toCharArray();
 		String		ks_file			= path;	    
 
 
@@ -30,7 +34,9 @@ public class Firma {
 
 		ks = KeyStore.getInstance("JCEKS");
 
-		ks.load(new FileInputStream(ks_file),  ks_password);	
+		ks.load(new FileInputStream(ks_file),  ks_password);
+		
+
 
 		KeyStore.PrivateKeyEntry pkEntry = (KeyStore.PrivateKeyEntry)
 				ks.getEntry(ksentry,

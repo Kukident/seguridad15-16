@@ -16,6 +16,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.nio.charset.StandardCharsets;
 import java.security.KeyStore;
 import java.security.MessageDigest;
 import java.security.cert.CertificateFactory;
@@ -55,6 +56,8 @@ public class Cliente {
 	private static String	contraseñaKeystore;
 	private static String	truststoreFile;
 	private static String	contraseñaTruststore;
+	private static String	ksentry="prueba";
+	private static String 	ksentrypass="147258";
 
 	public static void main(String[] args) throws Exception {
 
@@ -84,7 +87,7 @@ public class Cliente {
 		}
 
 		definirKeyStores();
-		
+
 		try {
 
 			/*****************************************************************************
@@ -110,7 +113,7 @@ public class Cliente {
 				factory = ctx.getSocketFactory();
 
 
-				byte []   certificadoRaw  = ks.getCertificate("prueba").getEncoded();
+				byte []   certificadoRaw  = ks.getCertificate(ksentry).getEncoded();
 
 				ByteArrayInputStream inStream = null;
 
@@ -119,7 +122,7 @@ public class Cliente {
 				X509Certificate cert1 = (X509Certificate)cf.generateCertificate(inStream);
 				idPropietario=cert1.getIssuerDN().toString();
 				System.out.println ("Usuario certificado " +
-						idPropietario);  
+						idPropietario); 
 
 
 
@@ -181,11 +184,28 @@ public class Cliente {
 				if (entrada.hasNextInt()){
 					switch (entrada.nextInt()) {
 					case 1:
-						System.out.println("Registrar Documento");
+						String [] datos = null;
+						System.out.println("Registrar Documento:\nUso: fichero.ext privado|publico");
+						entrada.nextLine();
+						if (entrada.hasNextLine()) {
+							datos=entrada.nextLine().split(" ");
+							if (datos.length!=2) {
+								System.out.println("Comando incorrecto");
+								break;
+							}
+							else {
+								if (!datos[1].equals("privado")) {
+									if (!datos[1].equals("publico")) {
+										System.out.println("Confidencialidad incorrecta");
+										break;		
+									}
+								}
+							}
+						}
 						try {
-							byte [] fichero = leerfichero.leer(raizCliente+"Enviar/imagen.jpg");
-							byte [] firma = Otros.Firma.Firmar(fichero, raizCliente+keyStoreFile,"prueba","SHA1withDSA",1024);
-							Registrar_Documento_Request registrar = new Registrar_Documento_Request(idPropietario, "HUEHUEHUE", "publico", fichero,raizCliente+keyStoreFile,firma);
+							byte [] fichero = leerfichero.leer(raizCliente+"Enviar/"+datos[0]);
+							byte [] firma = Otros.Firma.Firmar(fichero, raizCliente+keyStoreFile,contraseñaKeystore,ksentry,ksentrypass,"SHA1withDSA",1024);
+							Registrar_Documento_Request registrar = new Registrar_Documento_Request(idPropietario, datos[0], datos[1], fichero,raizCliente+keyStoreFile,firma);
 							out.writeObject(registrar);
 
 							Registrar_Documento_Response recibido = (Registrar_Documento_Response) in.readObject();
@@ -202,17 +222,14 @@ public class Cliente {
 								fr = ops.toByteArray();
 								ops.close();
 
-								for (int i = 0; i < registrar.getFirmaDoc().length; i++) {
-									System.out.println(registrar.getFirmaDoc()[i]);
-								}
-								
-								if (Otros.VerificarFirma.Verificar(fr, raizCliente+truststoreFile, recibido.getFirmaRegistrador(), "SHA1withRSA",2048,"servidor")) {
+								if (Otros.VerificarFirma.Verificar(fr, raizCliente+truststoreFile,contraseñaTruststore, recibido.getFirmaRegistrador(), "SHA1withRSA",2048,"servidor")) {
 									System.out.println("Documento correctamente registrado");
 									MessageDigest digest = MessageDigest.getInstance("SHA-256");
 									byte[] hash = digest.digest(registrar.getDocumento());
 									ArrayList<byte []> arraylist = new ArrayList<byte []>();
 									arraylist.add(hash);
 									arraylist.add(firma);
+									arraylist.add(registrar.getNombreDoc().getBytes());
 									BD.put(recibido.getIdRegistro(), arraylist);
 									System.out.println(String.format("Hash documento enviado: "+"%064x", new java.math.BigInteger(1, hash)));
 								}
@@ -244,17 +261,18 @@ public class Cliente {
 						ops.write((byte[]) BD.get(recibido.getIdRegistro()).get(1));
 						fr = ops.toByteArray();
 						ops.close();
-						
+
 
 						MessageDigest digest = MessageDigest.getInstance("SHA-256");
 						byte[] hash = digest.digest(recibido.getDocumento());
 						System.out.println(String.format("Hash documento recibido: "+"%064x", new java.math.BigInteger(1, hash)));
 
 
-						if (Otros.VerificarFirma.Verificar(fr, raizCliente+truststoreFile, recibido.getFirmaRegistrador(), "SHA1withRSA",2048,"servidor")) {
+						if (Otros.VerificarFirma.Verificar(fr, raizCliente+truststoreFile,contraseñaTruststore, recibido.getFirmaRegistrador(), "SHA1withRSA",2048,"servidor")) {
 							if (Arrays.equals(hash, (byte[]) BD.get(recibido.getIdRegistro()).get(0))) {
 								System.out.println("Documento recuperado correctamente");
-								fout = new FileOutputStream(raizCliente+"Recibir/huehue.jpg");
+								System.out.println("13 "+new String((byte[]) BD.get(recibido.getIdRegistro()).get(2), StandardCharsets.UTF_8));
+								fout = new FileOutputStream(raizCliente+"Recibir/"+new String((byte[]) BD.get(recibido.getIdRegistro()).get(2), StandardCharsets.UTF_8));
 								fout.write(recibido.getDocumento());
 								fout.close();
 							}

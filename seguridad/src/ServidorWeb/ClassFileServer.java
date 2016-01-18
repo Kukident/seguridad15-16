@@ -1,12 +1,15 @@
 package ServidorWeb;
 
-import java.io.*;
-import java.net.*;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.net.ServerSocket;
 import java.security.KeyStore;
 
-import javax.net.*;
-import javax.net.ssl.*;
-import javax.security.cert.X509Certificate;
+import javax.net.ServerSocketFactory;
+import javax.net.ssl.KeyManagerFactory;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLServerSocket;
+import javax.net.ssl.SSLServerSocketFactory;
 
 /*********************************************************************
  * ClassFileServer.java -- a simple file server that can server
@@ -20,8 +23,9 @@ import javax.security.cert.X509Certificate;
 
 public class ClassFileServer extends ClassServer {
 
-    protected ClassFileServer(ServerSocket ss) {
-		super(ss);
+    protected ClassFileServer(ServerSocket ss, String algoritmoCifrado, String path,
+    		String keyStoreFile, String contraseñaKeystore,String truststoreFile, String contraseñaTruststore) {
+		super(ss,algoritmoCifrado,raizServidor,keyStoreFile,contraseñaKeystore,truststoreFile,contraseñaTruststore);
 		// TODO Auto-generated constructor stub
 	}
 
@@ -31,23 +35,29 @@ public class ClassFileServer extends ClassServer {
 	private static String	contraseñaKeystore;
 	private static String	truststoreFile;
 	private static String	contraseñaTruststore;
+	private static String	algoritmocifrado;
 
 
     public static void main(String args[])
     {
     	System.out.println("+++++++++++++++++++++Hola soy un servidor");
     	
-		System.out.println(
-		    "USAGE: java Registrador keyStoreFile contraseñaKeystore truststoreFile contraseñaTruststore algoritmoCifrado");
+    	if (args.length < 5) {
+			System.out.println(
+					"USAGE: java Registrador " +
+					"keyStoreFile contraseñaKeystore truststoreFile contraseñaTruststore algoritmoCifrado");
+			System.exit(-1);
+		}
 	
 		try {
 			keyStoreFile = args[0];
 			contraseñaKeystore = args[1];
 			truststoreFile = args[2];
 			contraseñaTruststore = args[3];
+			algoritmocifrado = args[4].toLowerCase();
 		} catch (IllegalArgumentException e) {
-			System.out.println("USAGE: java SSLSocketClientWithClientAuth " +
-					"keyStoreFile contraseñaKeystore truststoreFile contraseñaTruststore");
+			System.out.println("USAGE: java Registrador " +
+					"keyStoreFile contraseñaKeystore truststoreFile contraseñaTruststore algoritmoCifrado");
 			System.exit(-1);
 		}
 		
@@ -64,7 +74,7 @@ public class ClassFileServer extends ClassServer {
 		    /*for (int j = 0; j < ((SSLServerSocket)ss).getEnabledCipherSuites().length; j++) {
 	        	   System.out.println(((SSLServerSocket)ss).getEnabledCipherSuites()[j].toString());}*/
 		
-		    new ClassFileServer(ss);
+		    new ClassFileServer(ss,algoritmocifrado,raizServidor,keyStoreFile,contraseñaKeystore,truststoreFile,contraseñaTruststore);
 		
 		} catch (IOException e) {
 		    System.out.println("Unable to start ClassServer: " +

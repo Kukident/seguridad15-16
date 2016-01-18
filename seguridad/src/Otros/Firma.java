@@ -1,17 +1,26 @@
 package Otros;
 import java.io.ByteArrayInputStream;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.security.InvalidKeyException;
 import java.security.KeyStore;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.Signature;
+import java.security.SignatureException;
+import java.security.UnrecoverableEntryException;
 import java.security.cert.Certificate;
+import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.util.Enumeration;
 
 public class Firma {
 
-	public static byte [] Firmar(byte [] file, String path, String pass, String ksentry, String entrypass, String algoritmo, int longitud_clave) throws Exception{
+	public static byte [] Firmar(byte [] file, String path, String pass, String ksentry, String entrypass, String algoritmo, int longitud_clave) 
+			throws KeyStoreException, NoSuchAlgorithmException, CertificateException, FileNotFoundException, IOException, UnrecoverableEntryException, InvalidKeyException, SignatureException{
 		ByteArrayInputStream fmensaje   = new    ByteArrayInputStream(file);      
 
 		//String 		provider         = "SunJCE";

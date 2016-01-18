@@ -17,6 +17,10 @@ public class Recuperar_Documento_Response implements Serializable{
 		this.firmaRegistrador = firmaRegistrador;
 	}
 
+	public Recuperar_Documento_Response(int idError) {
+		this.idError=idError;
+	}
+
 	public int getIdError() {
 		return idError;
 	}

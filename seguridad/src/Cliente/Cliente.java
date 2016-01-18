@@ -12,6 +12,7 @@ package Cliente;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
@@ -28,6 +29,7 @@ import java.util.Scanner;
 
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLException;
 import javax.net.ssl.SSLSocket;
 import javax.net.ssl.SSLSocketFactory;
 
@@ -238,9 +240,15 @@ public class Cliente {
 								}
 							}
 							else{
-								System.out.println(recibido.getIdError());
+								System.out.println("ID de error: "+recibido.getIdError());
 							}
-						} catch (Exception e) {
+						}catch (FileNotFoundException e) {
+							System.out.println("File not found " + e);
+						}
+						catch (IOException ioe) {
+							System.out.println("Exception while reading file " + ioe);
+						}
+						catch (Exception e) {
 							e.printStackTrace();
 						}
 						break;
@@ -250,38 +258,42 @@ public class Cliente {
 						Recuperar_Documento_Request recuperar = new Recuperar_Documento_Request(idPropietario, 0);
 						out.writeObject(recuperar);
 						Recuperar_Documento_Response recibido =  (Recuperar_Documento_Response) in.readObject();
-						System.out.println("Leyendo objeto recibido   "+recibido.getSelloTemporal());
+						System.out.println("Leyendo objeto recibido   ");
+
+						if (recibido.getIdError()==0) {
+
+							ByteArrayOutputStream ops = new ByteArrayOutputStream();
+							byte fr [];
+							ops.write(recibido.getDocumento());
+							ops.write(recibido.getIdRegistro());
+							ops.write(recibido.getSelloTemporal().getBytes());
+							ops.write((byte[]) BD.get(recibido.getIdRegistro()).get(1));
+							fr = ops.toByteArray();
+							ops.close();
 
 
-						ByteArrayOutputStream ops = new ByteArrayOutputStream();
-						byte fr [];
-						ops.write(recibido.getDocumento());
-						ops.write(recibido.getIdRegistro());
-						ops.write(recibido.getSelloTemporal().getBytes());
-						ops.write((byte[]) BD.get(recibido.getIdRegistro()).get(1));
-						fr = ops.toByteArray();
-						ops.close();
+							MessageDigest digest = MessageDigest.getInstance("SHA-256");
+							byte[] hash = digest.digest(recibido.getDocumento());
+							System.out.println(String.format("Hash documento recibido: "+"%064x", new java.math.BigInteger(1, hash)));
 
 
-						MessageDigest digest = MessageDigest.getInstance("SHA-256");
-						byte[] hash = digest.digest(recibido.getDocumento());
-						System.out.println(String.format("Hash documento recibido: "+"%064x", new java.math.BigInteger(1, hash)));
-
-
-						if (Otros.VerificarFirma.Verificar(fr, raizCliente+truststoreFile,contraseñaTruststore, recibido.getFirmaRegistrador(), "SHA1withRSA",2048,"servidor")) {
-							if (Arrays.equals(hash, (byte[]) BD.get(recibido.getIdRegistro()).get(0))) {
-								System.out.println("Documento recuperado correctamente");
-								System.out.println("13 "+new String((byte[]) BD.get(recibido.getIdRegistro()).get(2), StandardCharsets.UTF_8));
-								fout = new FileOutputStream(raizCliente+"Recibir/"+new String((byte[]) BD.get(recibido.getIdRegistro()).get(2), StandardCharsets.UTF_8));
-								fout.write(recibido.getDocumento());
-								fout.close();
+							if (Otros.VerificarFirma.Verificar(fr, raizCliente+truststoreFile,contraseñaTruststore, recibido.getFirmaRegistrador(), "SHA1withRSA",2048,"servidor")) {
+								if (Arrays.equals(hash, (byte[]) BD.get(recibido.getIdRegistro()).get(0))) {
+									System.out.println("Documento recuperado correctamente");
+									System.out.println("13 "+new String((byte[]) BD.get(recibido.getIdRegistro()).get(2), StandardCharsets.UTF_8));
+									fout = new FileOutputStream(raizCliente+"Recibir/"+new String((byte[]) BD.get(recibido.getIdRegistro()).get(2), StandardCharsets.UTF_8));
+									fout.write(recibido.getDocumento());
+									fout.close();
+								}
+								else {
+									System.out.println("Documento alterado por el registrador");
+								}
 							}
-							else {
-								System.out.println("Documento alterado por el registrador");
+							else{
+								System.out.println("Fallo de firma de registrador");
 							}
-						}
-						else{
-							System.out.println("Fallo de firma de registrador");
+						}else{
+							System.out.println("ED de error: "+recibido.getIdError());
 						}
 						break;
 
@@ -311,6 +323,9 @@ public class Cliente {
 			out.close();
 			socket.close();
 
+		} catch (SSLException e) {
+			System.out.println("Conexion con el servidor caida "+e);
+			//e.printStackTrace();
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -324,10 +339,9 @@ public class Cliente {
 	{
 		// Almacen de claves
 
-		System.setProperty("javax.net.ssl.keyStore",         raizCliente + "cliente.jce");
+		System.setProperty("javax.net.ssl.keyStore",         raizCliente + keyStoreFile);
 		System.setProperty("javax.net.ssl.keyStoreType",     "JCEKS");
 		System.setProperty("javax.net.ssl.keyStorePassword", contraseñaKeystore);
-		System.out.println("si");
 		// Almacen de confianza
 
 		System.setProperty("javax.net.ssl.trustStore",          raizCliente + truststoreFile);

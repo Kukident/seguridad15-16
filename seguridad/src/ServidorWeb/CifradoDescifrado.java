@@ -3,17 +3,30 @@ package ServidorWeb;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.security.AlgorithmParameters;
+import java.security.InvalidAlgorithmParameterException;
+import java.security.InvalidKeyException;
 import java.security.KeyStore;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
+import java.security.NoSuchProviderException;
+import java.security.UnrecoverableEntryException;
+import java.security.cert.CertificateException;
 
+import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
+import javax.crypto.IllegalBlockSizeException;
+import javax.crypto.NoSuchPaddingException;
 import javax.crypto.ShortBufferException;
 import javax.crypto.spec.SecretKeySpec;
 
 
 public class CifradoDescifrado {
 
-	public static void cifrar(Fichero fichero, String algoritmo) throws Exception{
+	public static void cifrar(Fichero fichero, String algoritmo) 
+			throws KeyStoreException, NoSuchAlgorithmException, CertificateException, FileNotFoundException, IOException, UnrecoverableEntryException, NoSuchProviderException, NoSuchPaddingException, InvalidKeyException, ShortBufferException, IllegalBlockSizeException, BadPaddingException{
 		String provider         = "SunJCE";
 		ByteArrayInputStream ftextoclaro   = new    ByteArrayInputStream(fichero.getDocumento());
 		ByteArrayOutputStream ftextocifrado = new ByteArrayOutputStream();
@@ -132,7 +145,8 @@ public class CifradoDescifrado {
 		}
 	}
 
-	public static byte [] descifrar(byte [] cifrado, byte [] param, String algoritmo) throws Exception{
+	public static byte [] descifrar(byte [] cifrado, byte [] param, String algoritmo) 
+			throws KeyStoreException, NoSuchAlgorithmException, CertificateException, FileNotFoundException, IOException, UnrecoverableEntryException, NoSuchProviderException, NoSuchPaddingException, InvalidKeyException, ShortBufferException, IllegalBlockSizeException, BadPaddingException, InvalidAlgorithmParameterException{
 		String provider         = "SunJCE";
 		//String algoritmo        = "AES";
 		String transformacion   = "/CBC/PKCS5Padding";

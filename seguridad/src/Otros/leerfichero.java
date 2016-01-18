@@ -22,11 +22,11 @@ public class leerfichero {
 			return fileContent;
 		}
 		catch (FileNotFoundException e) {
-			System.out.println("File not found " + e);
+			//System.out.println("File not found " + e);
 			throw e;
 		}
 		catch (IOException ioe) {
-			System.out.println("Exception while reading file " + ioe);
+			//System.out.println("Exception while reading file " + ioe);
 			throw ioe;
 		}
 		finally {
@@ -37,7 +37,7 @@ public class leerfichero {
 				}
 			}
 			catch (IOException ioe) {
-				System.out.println("Error while closing stream: " + ioe);
+				//System.out.println("Error while closing stream: " + ioe);
 			}
 		}
 	}

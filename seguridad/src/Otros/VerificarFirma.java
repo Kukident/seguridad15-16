@@ -2,16 +2,24 @@ package Otros;
 
 import java.io.ByteArrayInputStream;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.security.InvalidKeyException;
 import java.security.KeyStore;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
 import java.security.PublicKey;
 import java.security.Signature;
+import java.security.SignatureException;
 import java.security.cert.Certificate;
+import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.util.Enumeration;
 
 public class VerificarFirma {
-	public static boolean Verificar(byte [] file, String path,String pass, byte [] firma, String algoritmo, int longitud_clave, String user) throws Exception{       
+	public static boolean Verificar(byte [] file, String path,String pass, byte [] firma, String algoritmo, int longitud_clave, String user) 
+			throws KeyStoreException, NoSuchAlgorithmException, CertificateException, FileNotFoundException, IOException, InvalidKeyException, SignatureException{       
 	    int    		longbloque;
 	    byte   		bloque[]         = new byte[longitud_clave];
 	    long   		filesize         = 0;

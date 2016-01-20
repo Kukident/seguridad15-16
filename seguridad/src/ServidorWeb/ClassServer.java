@@ -111,7 +111,6 @@ public abstract class ClassServer implements Runnable {
 					try{
 						Registrar_Documento_Request rdr=((Registrar_Documento_Request) recibido);
 						timestamp=gettimestamp();
-						System.out.println(rdr.getNombreDoc());
 						if (Otros.VerificarFirma.Verificar(rdr.getDocumento(), path+truststoreFile,contraseñaTruststore, rdr.getFirmaDoc(),"SHA1withDSA",1024,rdr.getIdPropietario())){
 
 
@@ -128,7 +127,7 @@ public abstract class ClassServer implements Runnable {
 							Fichero doc = new Fichero(rdr.getDocumento(), rdr.getFirmaDoc(), idRegistro, timestamp, 
 									Otros.Firma.Firmar(fr, path+keyStoreFile,contraseñaKeystore,ksentry,ksentrypass,"SHA1withRSA",2048), rdr.getIdPropietario(),false);
 							if (rdr.getTipoConfidencialidad().toLowerCase().equals("privado")) {
-								CifradoDescifrado.cifrar(doc,algoritmoCifrado);
+								CifradoDescifrado.cifrar(doc,algoritmoCifrado);//La clase cifrado ya se encarga de obtener el documento
 								fout = new FileOutputStream(path+idRegistro+"_"+rdr.getIdPropietario()+".cif");
 							}
 							else{
@@ -139,7 +138,6 @@ public abstract class ClassServer implements Runnable {
 							doc.setDocumento(null);//Dejamos vacio el doc para no ocupar memoria??
 							doc.setNombreDoc(rdr.getNombreDoc());
 							BD.put(idRegistro, doc);
-							System.out.println("////////////////////"+BD.toString());
 
 							Registrar_Documento_Response response = new Registrar_Documento_Response(0, doc.getIdRegistro(), doc.getSelloTemporal(), doc.getFirmaRegistrador());
 							out.writeObject(response);
@@ -149,7 +147,6 @@ public abstract class ClassServer implements Runnable {
 							idRegistro++;
 						}
 						else {
-							System.out.println("No");
 							//Devolver respuesta de error
 							Registrar_Documento_Response response = new Registrar_Documento_Response(1);
 							out.writeObject(response);
@@ -198,14 +195,13 @@ public abstract class ClassServer implements Runnable {
 				}
 				if (recibido instanceof Recuperar_Documento_Request) {
 					try {
-						System.out.println(BD.toString());
 						Fichero doc;
 						Recuperar_Documento_Request rdr = (Recuperar_Documento_Request) recibido;
 						if (BD.containsKey(rdr.getIdRegistro())) {
 							if (BD.get(rdr.getIdRegistro()).isPrivado()) {
 								if (BD.get(rdr.getIdRegistro()).getIdPropietario().equals(rdr.getIdPropietario())){
 									//Desciframos y respondemos con el fichero
-									System.out.println("Vamos a descifrar el documento...");
+									System.out.println("Descifrando el documento...");
 									doc = (Fichero) deserialize(Otros.leerfichero.leer(path+rdr.getIdRegistro()+"_"+rdr.getIdPropietario()+".cif"));
 									Recuperar_Documento_Response response = new Recuperar_Documento_Response(0, rdr.getIdRegistro(), BD.get(rdr.getIdRegistro()).getSelloTemporal(),
 											CifradoDescifrado.descifrar(doc.getDocumento(), doc.getParamCifrado(),algoritmoCifrado),BD.get(rdr.getIdRegistro()).getFirmaRegistrador());

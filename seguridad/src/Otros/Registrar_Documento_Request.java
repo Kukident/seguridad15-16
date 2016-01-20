@@ -9,12 +9,13 @@ public class Registrar_Documento_Request implements Serializable {
 	private byte [] documento;
 	private byte [] firmaDoc;
 	
-	public Registrar_Documento_Request(String idPropietario, String nombreDoc, String tipoConfidencialidad, byte [] documento, String path,byte [] firmaDoc){
-		this.idPropietario=idPropietario;
-		this.nombreDoc=nombreDoc;
-		this.tipoConfidencialidad=tipoConfidencialidad;
-		this.documento=documento;
-		this.firmaDoc=firmaDoc;
+	public Registrar_Documento_Request(String idPropietario, String nombreDoc, String tipoConfidencialidad,
+		byte[] documento, String path, byte[] firmaDoc) {
+		this.idPropietario = idPropietario;
+		this.nombreDoc = nombreDoc;
+		this.tipoConfidencialidad = tipoConfidencialidad;
+		this.documento = documento;
+		this.firmaDoc = firmaDoc;
 
 	}
 

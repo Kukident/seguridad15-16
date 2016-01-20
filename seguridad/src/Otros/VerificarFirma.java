@@ -36,7 +36,7 @@ public class VerificarFirma {
 		 *       Verificacion
 		 ******************************************************************/
 		System.out.println("************************************* ");
-		System.out.println("    VERIFICACION                    * ");
+		System.out.println("*         VERIFICACION              * ");
 		System.out.println("************************************* ");
 		
 		
@@ -53,7 +53,6 @@ public class VerificarFirma {
 		 Enumeration enumeration = ks.aliases();
 	        while(enumeration.hasMoreElements()) {
 	            String alias = (String)enumeration.nextElement();
-	            System.out.println("alias name: " + alias);
 	            byte[] certificado = ks.getCertificate(alias).getEncoded();
 	            
 	            ByteArrayInputStream inStream = null;
@@ -109,11 +108,11 @@ public class VerificarFirma {
 		fmensajeV.close();
 		inStream.close();
 		if (resultado == true){
-		    System.out.print("Firma CORRECTA");
+		    System.out.print("Firma CORRECTA\n");
 			return true;
 		}
 		else{
-			System.out.print("Firma NO correcta");
+			System.out.print("Firma NO correcta\n");
 			return false;
 		}
 		

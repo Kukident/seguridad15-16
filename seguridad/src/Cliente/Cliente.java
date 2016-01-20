@@ -11,6 +11,7 @@ package Cliente;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
@@ -68,9 +69,9 @@ public class Cliente {
 		String idPropietario = null;
 		HashMap<Integer, ArrayList> BD = new HashMap<Integer, ArrayList>();
 
-		System.out.println("----------------Hola soy un cliente");
+		System.out.println("/****Hola soy un cliente****\\");
 
-		if (args.length < 4) {
+		if (args.length != 4) {
 			System.out.println(
 					"USAGE: java Cliente " +
 					"keyStoreFile contraseñaKeystore truststoreFile contraseñaTruststore");
@@ -123,11 +124,6 @@ public class Cliente {
 				CertificateFactory cf = CertificateFactory.getInstance("X.509");
 				X509Certificate cert1 = (X509Certificate)cf.generateCertificate(inStream);
 				idPropietario=cert1.getIssuerDN().toString();
-				System.out.println ("Usuario certificado " +
-						idPropietario); 
-
-
-
 
 				/*********************************************************************
 				 * Suites SSL del contexto
@@ -234,6 +230,7 @@ public class Cliente {
 									arraylist.add(registrar.getNombreDoc().getBytes());
 									BD.put(recibido.getIdRegistro(), arraylist);
 									System.out.println(String.format("Hash documento enviado: "+"%064x", new java.math.BigInteger(1, hash)));
+									System.out.println("Borramos el documento enviado del directorio: "+new File(raizCliente+"Enviar/"+datos[0]).delete());
 								}
 								else{
 									System.out.println("Firma registrador incorrecta");
@@ -255,7 +252,9 @@ public class Cliente {
 
 					case 2:
 						System.out.println("Recuperar Documento");
-						Recuperar_Documento_Request recuperar = new Recuperar_Documento_Request(idPropietario, 0);
+						System.out.println("Introduce el idRegistro que quieras recuperar: ");
+						int idRegistro = entrada.nextInt();
+						Recuperar_Documento_Request recuperar = new Recuperar_Documento_Request(idPropietario, idRegistro);
 						out.writeObject(recuperar);
 						Recuperar_Documento_Response recibido =  (Recuperar_Documento_Response) in.readObject();
 						System.out.println("Leyendo objeto recibido   ");
@@ -280,7 +279,6 @@ public class Cliente {
 							if (Otros.VerificarFirma.Verificar(fr, raizCliente+truststoreFile,contraseñaTruststore, recibido.getFirmaRegistrador(), "SHA1withRSA",2048,"servidor")) {
 								if (Arrays.equals(hash, (byte[]) BD.get(recibido.getIdRegistro()).get(0))) {
 									System.out.println("Documento recuperado correctamente");
-									System.out.println("13 "+new String((byte[]) BD.get(recibido.getIdRegistro()).get(2), StandardCharsets.UTF_8));
 									fout = new FileOutputStream(raizCliente+"Recibir/"+new String((byte[]) BD.get(recibido.getIdRegistro()).get(2), StandardCharsets.UTF_8));
 									fout.write(recibido.getDocumento());
 									fout.close();
@@ -293,7 +291,7 @@ public class Cliente {
 								System.out.println("Fallo de firma de registrador");
 							}
 						}else{
-							System.out.println("ED de error: "+recibido.getIdError());
+							System.out.println("ID de error: "+recibido.getIdError());
 						}
 						break;
 
@@ -302,8 +300,8 @@ public class Cliente {
 						Listar_Documentos_Request listar = new Listar_Documentos_Request(idPropietario);
 						out.writeObject(listar);
 						Listar_Documentos_Response recibido1 = (Listar_Documentos_Response) in.readObject();
-						System.out.println("Publicos: "+recibido1.getListaDocPublicos().values());
-						System.out.println("Privados: "+recibido1.getListaDocPrivados().values());
+						System.out.println("Publicos: "+recibido1.getListaDocPublicos().toString());
+						System.out.println("Privados: "+recibido1.getListaDocPrivados().toString());
 						break;
 
 					default:

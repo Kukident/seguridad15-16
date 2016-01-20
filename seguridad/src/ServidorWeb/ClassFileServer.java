@@ -40,7 +40,7 @@ public class ClassFileServer extends ClassServer {
 
     public static void main(String args[])
     {
-    	System.out.println("+++++++++++++++++++++Hola soy un servidor");
+    	System.out.println("/****Hola soy un servidor****\\");
     	
     	if (args.length < 5) {
 			System.out.println(
